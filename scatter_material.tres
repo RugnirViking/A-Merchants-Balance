@@ -1,0 +1,19 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=2]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+
+uniform sampler2D spritesheet;
+uniform vec2 sheet_size = vec2(9.0, 2.0);
+
+void fragment() {
+    vec2 tile_size = vec2(1.0) / sheet_size;
+    vec2 uv_offset = tile_size * COLOR.rg; // Use instance Color.rg as tile index
+    vec2 uv = UV * tile_size + uv_offset;
+    COLOR = texture(spritesheet, uv);
+}
+"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/sheet_size = Vector2( 9, 2 )

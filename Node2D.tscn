@@ -1,0 +1,224 @@
+[gd_scene load_steps=16 format=2]
+
+[ext_resource path="res://assets/player.png" type="Texture" id=1]
+[ext_resource path="res://assets/background.png" type="Texture" id=2]
+[ext_resource path="res://BaseGameHandler.cs" type="Script" id=3]
+[ext_resource path="res://Barlow-Black.ttf" type="DynamicFontData" id=4]
+[ext_resource path="res://scattermap.tres" type="MultiMesh" id=5]
+[ext_resource path="res://GlassEffect.cs" type="Script" id=6]
+[ext_resource path="res://assets/light.png" type="Texture" id=7]
+[ext_resource path="res://assets/scatter_atlas.png" type="Texture" id=8]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+
+uniform vec2 uv_offset = vec2(0.0);
+
+void fragment() {
+    // simply tile the texture at (UV + offset)
+    COLOR = texture(TEXTURE, UV + uv_offset);
+}
+"
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = SubResource( 1 )
+shader_param/uv_offset = Vector2( 0, 0 )
+
+[sub_resource type="Shader" id=6]
+code = "shader_type canvas_item;
+
+uniform sampler2D spritesheet;
+uniform vec2 sheet_size = vec2(9.0, 2.0); // number of tiles across & down
+
+void fragment() {
+    vec2 tile_size = vec2(1.0) / sheet_size; // e.g., (1/9, 1/2) = size of a tile in UV units
+    vec2 tile_index = COLOR.rg;              // contains normalized tile index from 0–1
+
+    // Multiply back up to tile grid space, then snap to floor to get proper tile
+    vec2 grid_coords = floor(tile_index * sheet_size);
+
+    vec2 uv_offset = grid_coords * tile_size;
+    vec2 uv = UV * tile_size + uv_offset;
+
+    COLOR = texture(spritesheet, uv);
+}
+"
+
+[sub_resource type="ShaderMaterial" id=7]
+shader = SubResource( 6 )
+shader_param/sheet_size = Vector2( 9, 2 )
+shader_param/spritesheet = ExtResource( 8 )
+
+[sub_resource type="Shader" id=4]
+code = "shader_type canvas_item;
+
+uniform float strength        : hint_range(0.0, 1.0) = 0.3;
+uniform vec2  rect_size       = vec2(0.85, 0.85); // percent of screen
+uniform float corner_radius   : hint_range(0.0, 0.5) = 0.05;
+uniform sampler2D reflection_tex; // Optional: light shimmer texture
+uniform float time;
+
+void fragment() {
+    // UV and center offset
+    vec2 uv0 = SCREEN_UV;
+    vec2 pos = uv0 * 2.0 - 1.0;
+    float r = length(pos);
+
+    // === Dynamic barrel distortion ===
+    float dynamic_strength = strength * (1.0 - max(rect_size.x, rect_size.y));
+    vec2 distorted = pos + pos * (dynamic_strength * r * r);
+    vec2 barrel_uv = clamp((distorted + 1.0) * 0.5, 0.0, 1.0);
+
+    // === Rounded-rect pixel-space mask ===
+    vec2 screen_px = vec2(1.0) / SCREEN_PIXEL_SIZE;
+    vec2 center_px = (uv0 - 0.5) * screen_px;
+    vec2 half_px   = rect_size * screen_px * 0.5;
+    float rad_px   = corner_radius * min(screen_px.x, screen_px.y);
+
+    vec2 d = abs(center_px) - half_px + vec2(rad_px);
+    float dist = length(max(d, vec2(0.0))) - rad_px;
+    float mask = step(dist, 0.0);
+
+    // === Base color from distorted screen sample ===
+    vec3 base = texture(SCREEN_TEXTURE, mix(uv0, barrel_uv, mask)).rgb;
+
+    // === Subsurface scattering (edge glow inward) ===
+    float scatter = smoothstep(rad_px * 2.0, 0.0, dist);
+    vec3 subsurface = vec3(1.0, 1.0, 0.95) * scatter * 0.025;
+
+    // === Edge lighting fade (soft rim highlight) ===
+    float edgeFade = clamp(1.0 - dist / (rad_px * 2.0), 0.0, 1.0);
+    vec3 edgeGlow = vec3(1.0) * edgeFade * 0.04;
+
+    // === Directional light bias (fake bevel) ===
+    vec2 dir = normalize(center_px + vec2(0.0001)); // avoid divide by zero
+    float lightingBias = dot(dir, normalize(vec2(1.0, -1.0))); // bias toward bottom-right
+    lightingBias = clamp(lightingBias, -1.0, 1.0);
+    vec3 shading = mix(vec3(0.03), vec3(0.1), (lightingBias + 1.0) * 0.5);
+
+    // === Optional shimmer from texture ===
+    vec2 shimmer_uv = SCREEN_UV + vec2(time * 0.01, time * 0.005);
+    vec3 reflection = texture(reflection_tex, shimmer_uv).rgb * 0.15;
+
+    // === Final composite ===
+    vec3 final_color = base + edgeGlow + subsurface;
+	reflection = (reflection - 0.5) * 2.0; // Boost contrast to center around 0
+	final_color += reflection * 0.05;   // Additive subtle reflection
+    final_color *= 1.0 - shading;
+
+	// === Frosted glass tint (outside the mask) ===
+	// 9-tap blur
+    vec3 blur = vec3(0.0);
+	int taps = 0;
+	for (int x = -1; x <= 1; x++) {
+	    for (int y = -1; y <= 1; y++) {
+	        vec2 offset = vec2(float(x), float(y)) * SCREEN_PIXEL_SIZE * 2.0;
+	        blur += texture(SCREEN_TEXTURE, uv0 + offset).rgb;
+	        taps++;
+	    }
+	}
+	blur /= float(taps);
+
+    // Desaturate and brighten
+    float avg = (blur.r + blur.g + blur.b) / 3.0;
+    vec3 frosted = mix(vec3(avg), blur, 0.2) * 1.0;
+    frosted = clamp(frosted, 0.0, 1.0);
+
+    // Smooth blend between clear and frosted
+    float blend = smoothstep(-0.05, 0.05, mask - 0.5);
+    final_color = mix(frosted, final_color, blend);
+
+    COLOR = vec4(final_color, 1.0);
+}
+"
+
+[sub_resource type="ShaderMaterial" id=5]
+shader = SubResource( 4 )
+shader_param/strength = 0.8
+shader_param/rect_size = Vector2( 0.95, 0.95 )
+shader_param/corner_radius = 0.05
+shader_param/time = null
+shader_param/reflection_tex = ExtResource( 7 )
+
+[sub_resource type="DynamicFont" id=3]
+size = 31
+use_mipmaps = true
+use_filter = true
+font_data = ExtResource( 4 )
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource( 3 )
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -2
+
+[node name="Background" type="TextureRect" parent="BackgroundLayer"]
+material = SubResource( 2 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource( 2 )
+expand = true
+stretch_mode = 2
+
+[node name="ScatterLayer" type="MultiMeshInstance2D" parent="BackgroundLayer"]
+material = SubResource( 7 )
+multimesh = ExtResource( 5 )
+
+[node name="LineLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="TargetLine" type="Line2D" parent="LineLayer"]
+width = 2.0
+default_color = Color( 0.501961, 0.282353, 0.25098, 1 )
+antialiased = true
+
+[node name="GlassLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="GlassEffect" type="ColorRect" parent="GlassLayer"]
+material = SubResource( 5 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 6 )
+
+[node name="Player" type="Sprite" parent="."]
+position = Vector2( 500, 300 )
+scale = Vector2( 0.984375, 1.23047 )
+z_index = 1
+texture = ExtResource( 1 )
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="Control" type="Control" parent="UILayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -1.0
+
+[node name="Panel" type="Panel" parent="UILayer/Control"]
+margin_right = 298.0
+margin_bottom = 63.0
+
+[node name="TextureProgress" type="TextureProgress" parent="UILayer/Control/Panel"]
+margin_left = 11.0
+margin_top = 30.0
+margin_right = 285.0
+margin_bottom = 51.0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="UILayer/Control/Panel"]
+margin_left = 8.0
+margin_top = 11.0
+margin_right = 288.0
+margin_bottom = 51.0
+custom_fonts/normal_font = SubResource( 3 )
+text = "Money: 12"
+
+[node name="Button" type="Button" parent="UILayer"]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -73.0
+margin_top = 11.0
+margin_right = -13.0
+margin_bottom = 59.0
+text = "||"
