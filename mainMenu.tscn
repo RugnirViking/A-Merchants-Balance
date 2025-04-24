@@ -1,7 +1,15 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://mainMenu.cs" type="Script" id=1]
 [ext_resource path="res://barlowFontSize16.tres" type="DynamicFont" id=2]
+[ext_resource path="res://assets/dwarf.png" type="Texture" id=3]
+
+[sub_resource type="StyleBoxFlat" id=1]
+bg_color = Color( 0.854902, 0.752941, 0.603922, 1 )
+
+[sub_resource type="StyleBoxTexture" id=2]
+texture = ExtResource( 3 )
+region_rect = Rect2( 0, 0, 1024, 1536 )
 
 [node name="Control" type="Control"]
 anchor_right = 1.0
@@ -11,6 +19,7 @@ script = ExtResource( 1 )
 [node name="Panel" type="Panel" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+custom_styles/panel = SubResource( 1 )
 
 [node name="Main Menu separation" type="HBoxContainer" parent="Panel"]
 anchor_right = 1.0
@@ -21,6 +30,7 @@ margin_right = 510.0
 margin_bottom = 600.0
 rect_min_size = Vector2( 100, 0 )
 size_flags_horizontal = 3
+custom_styles/panel = SubResource( 2 )
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Panel/Main Menu separation"]
 margin_left = 514.0
@@ -72,28 +82,29 @@ margin_bottom = 600.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="TutorialPopup" type="HBoxContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+alignment = 1
 
-[node name="Filler1" type="Control" parent="HBoxContainer"]
+[node name="Filler1" type="Control" parent="TutorialPopup"]
 margin_right = 254.0
 margin_bottom = 600.0
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="TutorialPopup"]
 margin_left = 258.0
 margin_right = 766.0
 margin_bottom = 600.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Filler1" type="Control" parent="HBoxContainer/VBoxContainer"]
+[node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer"]
 margin_right = 508.0
 margin_bottom = 197.0
 size_flags_vertical = 3
 
-[node name="Tutorial" type="WindowDialog" parent="HBoxContainer/VBoxContainer"]
+[node name="Tutorial" type="WindowDialog" parent="TutorialPopup/VBoxContainer"]
 visible = true
 margin_top = 201.0
 margin_right = 508.0
@@ -103,28 +114,28 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 window_title = "Tutorial?"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/Tutorial"]
+[node name="HBoxContainer" type="HBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="Filler1" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer"]
+[node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
 margin_right = 31.0
 margin_bottom = 197.0
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
 margin_left = 35.0
 margin_right = 472.0
 margin_bottom = 197.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 14.0
 
-[node name="Filler1" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
+[node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
 margin_right = 437.0
 margin_bottom = 27.0
 size_flags_vertical = 3
 
-[node name="Tutorial text" type="Label" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
+[node name="Tutorial text" type="Label" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
 margin_top = 31.0
 margin_right = 437.0
 margin_bottom = 74.0
@@ -132,70 +143,70 @@ custom_fonts/font = ExtResource( 2 )
 text = "Are you sure you want to start a new game without a tutorial?"
 autowrap = true
 
-[node name="Filler2" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
+[node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
 margin_top = 78.0
 margin_right = 437.0
 margin_bottom = 106.0
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
 margin_top = 110.0
 margin_right = 437.0
 margin_bottom = 165.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="No include tutorial" type="Button" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="No include tutorial" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_right = 135.0
 margin_bottom = 55.0
 size_flags_horizontal = 3
 text = "No, include tutorial"
 
-[node name="Filler2" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_left = 139.0
 margin_right = 144.0
 margin_bottom = 55.0
 size_flags_horizontal = 3
 
-[node name="Yes tutorial" type="Button" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="Yes tutorial" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_left = 148.0
 margin_right = 256.0
 margin_bottom = 55.0
 size_flags_horizontal = 3
 text = "Yes, no tutorial"
 
-[node name="Filler3" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="Filler3" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_left = 260.0
 margin_right = 265.0
 margin_bottom = 55.0
 size_flags_horizontal = 3
 
-[node name="Yes dont ask again" type="Button" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="Yes dont ask again" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_left = 269.0
 margin_right = 437.0
 margin_bottom = 55.0
 size_flags_horizontal = 3
 text = "Yes, don't ask again!!! >:("
 
-[node name="Filler4" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
+[node name="Filler4" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
 margin_top = 169.0
 margin_right = 437.0
 margin_bottom = 197.0
 size_flags_vertical = 3
 
-[node name="Filler2" type="Control" parent="HBoxContainer/VBoxContainer/Tutorial/HBoxContainer"]
+[node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
 margin_left = 476.0
 margin_right = 508.0
 margin_bottom = 197.0
 size_flags_horizontal = 3
 
-[node name="Filler2" type="Control" parent="HBoxContainer/VBoxContainer"]
+[node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer"]
 margin_top = 402.0
 margin_right = 508.0
 margin_bottom = 600.0
 size_flags_vertical = 3
 
-[node name="Filler2" type="Control" parent="HBoxContainer"]
+[node name="Filler2" type="Control" parent="TutorialPopup"]
 margin_left = 770.0
 margin_right = 1024.0
 margin_bottom = 600.0

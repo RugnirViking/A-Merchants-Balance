@@ -400,7 +400,17 @@ public class BaseGameHandler : Node2D
 			}
 		}
 	}
+	
+	Vector2 NormalizeToMinimap(Vector2 worldPos, Vector2 minimapSize)
+	{
+		Vector2 worldMin = new Vector2(-3000, -3000);
+		Vector2 worldMax = new Vector2(3000, 3000);
+		Vector2 worldSize = worldMax - worldMin;
 
+		Vector2 normalized = (worldPos - worldMin) / worldSize;
+		return normalized * minimapSize;
+	}
+	
 	private void UpdateTarget(Vector2 mouseScreenPos)
 	{
 		// Convert screen position to UV

@@ -3,25 +3,24 @@ using System;
 
 public class mainMenu : Control
 {
-	// Declare member variables here. Examples:
-	// private int a = 2;
-	// private string b = "text";
-
-	// Called when the node enters the scene tree for the first time.
+	
+	private HBoxContainer    _tutorialContainer;
+	private Popup            _tutorialPopup;
+	
 	public override void _Ready()
 	{
+		_tutorialContainer = FindNode("TutorialPopup",true,false) as HBoxContainer;
+		_tutorialPopup = FindNode("Tutorial",true,false) as Popup;
 		
+		_tutorialContainer.Hide(); // this container blocks input through it, so if its shown when the game launches, you can't press the buttons
+
 	}
 
-//  // Called every frame. 'delta' is the elapsed time since the previous frame.
-//  public override void _Process(float delta)
-//  {
-//      
-//  }
+
+	private void _on_New_game_pressed()
+	{
+		_tutorialContainer.Show(); 
+		_tutorialPopup.PopupCentered();
+	}
 }
 
-
-private void _on_New_game_pressed()
-{
-	// Replace with function body.
-}
