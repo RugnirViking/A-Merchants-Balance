@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 
 public class BaseGameHandler : Node2D
 {
@@ -15,6 +16,7 @@ public class BaseGameHandler : Node2D
 	private Line2D         _line;
 	private ColorRect      _glassEffect;
 	private ShaderMaterial _glassMaterial;
+	private Node2D         _labelContainer;
 
 	// World offset & target in “virtual” world coords
 	private Vector2 _worldPos  = Vector2.Zero;
@@ -30,7 +32,211 @@ public class BaseGameHandler : Node2D
 	private const int SheetCols = 9;
 	private const int SheetRows = 2;
 	
+	private List<Vector2> _scatterPositions = new List<Vector2>();
+	private List<Cityscript> _cities = new List<Cityscript>();
 	
+	private Dictionary<string, Vector2> _atlasMap = new Dictionary<string, Vector2>
+	{
+		{ "campmarker1", new Vector2(0, 0) },
+		{ "citymarker1", new Vector2(1, 0) },
+		{ "citymarker2", new Vector2(2, 0) },
+		{ "citymarker3", new Vector2(3, 0) },
+		{ "citymarker4", new Vector2(4, 0) },
+		{ "citymarker5", new Vector2(5, 0) },
+		{ "citymarker6", new Vector2(6, 0) },
+		{ "citymarker7", new Vector2(7, 0) },
+		{ "citymarker8", new Vector2(8, 0) },
+		{ "citymarker9", new Vector2(0, 1) },
+		{ "forestmarker1", new Vector2(1, 1) },
+		{ "forestmarker2", new Vector2(2, 1) },
+		{ "hillsmarker1", new Vector2(3, 1) },
+		{ "mountains1", new Vector2(4, 1) },
+		{ "pondmarker1", new Vector2(5, 1) },
+		{ "pondmarker2", new Vector2(6, 1) },
+		{ "tentmarker1", new Vector2(7, 1) },
+		{ "treesmarker1", new Vector2(8, 1) }
+	};
+
+	private Vector2 GetAtlasUV(string key)
+	{
+		return _atlasMap.ContainsKey(key) ? _atlasMap[key] : Vector2.Zero;
+	}
+
+	private void SpawnScatter(ref int index, int count, List<string> textureKeys, float extent, bool allowFlip, RandomNumberGenerator rng, float minDistance = 75f)
+	{
+		int attemptsPerItem = 200000;
+
+		for (int i = 0; i < count; i++)
+		{
+			Vector2 pos = Vector2.Zero;
+			bool accepted = false;
+
+			for (int attempt = 0; attempt < attemptsPerItem; attempt++)
+			{
+				float x = rng.RandfRange(-extent, extent);
+				float y = rng.RandfRange(-extent, extent);
+				pos = new Vector2(x, y);
+
+				if (minDistance <= 0f)
+				{
+					accepted = true;
+					break;
+				}
+
+				bool farEnough = true;
+				foreach (var existing in _scatterPositions)
+				{
+					if (pos.DistanceSquaredTo(existing) < minDistance * minDistance)
+					{
+						farEnough = false;
+						break;
+					}
+				}
+
+				if (farEnough)
+				{
+					accepted = true;
+					break;
+				}
+			}
+
+			if (!accepted) continue; // skip this item if all attempts failed
+
+			_scatterPositions.Add(pos);
+
+			float rot = Mathf.Tau / 2;
+			float scale = 0.5f;
+
+			bool flip = allowFlip && rng.RandiRange(0, 1) == 1;
+			string key = textureKeys[rng.RandiRange(0, textureKeys.Count - 1)];
+			Vector2 uv = GetAtlasUV(key);
+
+			Transform2D xform2D = new Transform2D(rot, pos).Scaled(Vector2.One * scale);
+			Transform xform3D = new Transform(
+				new Basis(new Vector3(xform2D.x.x, xform2D.x.y, 0), new Vector3(xform2D.y.x, xform2D.y.y, 0), new Vector3(0, 0, 1)),
+				new Vector3(xform2D.origin.x, xform2D.origin.y, 0)
+			);
+
+			_multiMesh.SetInstanceTransform(index, xform3D);
+			_multiMesh.SetInstanceColor(index, new Color(
+				uv.x / 9f,
+				uv.y / 2f,
+				flip ? 1f : 0f,
+				1f
+			));
+			index++;
+		}
+	}
+
+	private void SpawnCluster(ref int index, int clusters, int itemsPerCluster, float clusterRadius, List<string> textureKeys, float extent, RandomNumberGenerator rng)
+	{
+		for (int c = 0; c < clusters; c++)
+		{
+			Vector2 center = new Vector2(
+				rng.RandfRange(-extent, extent),
+				rng.RandfRange(-extent, extent)
+			);
+
+			for (int i = 0; i < itemsPerCluster; i++)
+			{
+				Vector2 offset = new Vector2(
+					rng.RandfRange(-clusterRadius, clusterRadius),
+					rng.RandfRange(-clusterRadius, clusterRadius)
+				);
+
+				Vector2 pos = center + offset;
+
+				_scatterPositions.Add(pos);
+				float rot = Mathf.Tau/2;
+				float scale = 0.5f;
+
+				bool flip = rng.RandiRange(0, 1) == 1;
+				string key = textureKeys[rng.RandiRange(0, textureKeys.Count - 1)];
+				Vector2 uv = GetAtlasUV(key);
+
+				Transform2D xform2D = new Transform2D(rot, pos).Scaled(Vector2.One * scale);
+				Transform xform3D = new Transform(
+					new Basis(new Vector3(xform2D.x.x, xform2D.x.y, 0), new Vector3(xform2D.y.x, xform2D.y.y, 0), new Vector3(0, 0, 1)),
+					new Vector3(xform2D.origin.x, xform2D.origin.y, 0)
+				);
+
+				_multiMesh.SetInstanceTransform(index, xform3D);
+				_multiMesh.SetInstanceColor(index, new Color(
+					uv.x / 9f,
+					uv.y / 2f,
+					flip ? 1f : 0f,
+					1f
+				));
+
+				index++;
+			}
+		}
+	}
+	
+	private void SpawnCities(ref int index){
+		var cityParent = GetNodeOrNull<CanvasLayer>("CitiesLayer");
+		var prototype = _labelContainer.GetNode<NinePatchRect>("LabelPrototype");
+
+		_cities.Clear();
+		
+		if (cityParent != null)
+		{
+			foreach (Cityscript city in cityParent.GetChildren())
+			{
+				if (city is Position2D pos2D)
+				{
+					_cities.Add(city);
+					Vector2 pos = pos2D.GlobalPosition;
+					Vector2 worldPos = pos2D.Position; // this is the world-relative position
+					city.SetMeta("world_pos", worldPos); // store as metadata
+					
+					_scatterPositions.Add(pos);
+					string markerKey = city.AtlasKey;
+					bool flip = city.FlipX;
+					Vector2 uv = GetAtlasUV(markerKey);
+
+					Transform2D xform2D = new Transform2D(Mathf.Tau / 2, pos);
+					Transform xform3D = new Transform(
+						new Basis(
+							new Vector3(xform2D.x.x, xform2D.x.y, 0),
+							new Vector3(xform2D.y.x, xform2D.y.y, 0),
+							new Vector3(0, 0, 1)
+						),
+						new Vector3(xform2D.origin.x, xform2D.origin.y, 0)
+					);
+
+					_multiMesh.SetInstanceTransform(index, xform3D);
+					_multiMesh.SetInstanceColor(index, new Color(
+						uv.x / 9f,
+						uv.y / 2f,
+						flip ? 1f : 0f,
+						1f
+					));
+
+					
+					var panel = (NinePatchRect)prototype.Duplicate();
+					var label = panel.GetNode<PanelContainer>("LabelPrototype2").GetNode<Label>("TextForLabel");
+					label.Text = city.Name;
+
+					panel.Visible = true;
+
+					_labelContainer.AddChild(panel);
+					CallDeferred(nameof(SetupPanelPosition), panel, city.GlobalPosition);
+
+
+					index++;
+				}
+			}
+		}
+	}
+	public void SetupPanelPosition(Panel panel, Vector2 worldPos)
+	{
+		Vector2 size = panel.RectSize;
+		
+		// Just manually center it instead of using pivot
+		Vector2 offset = new Vector2(size.x / 2f, size.y); // center-bottom
+		panel.RectPosition = worldPos - offset + new Vector2(0, 90);
+	}
 	private void InitScatter()
 	{
 		_scatter = GetNode<MultiMeshInstance2D>("BackgroundLayer/ScatterLayer");
@@ -42,10 +248,8 @@ public class BaseGameHandler : Node2D
 
 		const int cols = 9;
 		const int rows = 2;
-		const int count = 1000;
 		const float extent = 3000f;
 
-		_multiMesh.InstanceCount = count;
 		_scatter.Multimesh = _multiMesh;
 
 		// Create the quad mesh (128x128)
@@ -59,46 +263,38 @@ public class BaseGameHandler : Node2D
 		// Assign mesh to MultiMesh
 		_multiMesh.Mesh = quad;
 
+		int index = 0;
 		var rng = new RandomNumberGenerator();
 		rng.Randomize();
 
-		for (int i = 0; i < count; i++)
-		{
-			// Random world position
-			Vector2 worldPos = new Vector2(
-				rng.RandfRange(-extent, extent),
-				rng.RandfRange(-extent, extent)
-			);
+		// Set the correct instance count
+		int magicNumberCount = 3250;
+		int cityCount = GetNodeOrNull<CanvasLayer>("CitiesLayer").GetChildren().Count;
+		_multiMesh.InstanceCount = magicNumberCount + cityCount; // exact amount we will need, important
 
-			float rot = Mathf.Tau/2;
-			float scale = 1.0f;
+		// Define texture groups
+		var forest = new List<string> { "forestmarker1", "forestmarker2", "treesmarker1" };
+		var hills = new List<string> { "hillsmarker1" };
+		var mountains = new List<string> { "mountains1" };
+		var ponds = new List<string> { "pondmarker1", "pondmarker2" };
+		var camps = new List<string> { "campmarker1", "tentmarker1" };
 
-			Transform2D xform2D = new Transform2D(rot, worldPos).Scaled(Vector2.One * scale);
+		// Generate clustered forests
+		SpawnCluster(ref index, 30, 20, 200f, forest, extent, rng);
 
-			// Convert to 3D Transform
-			Transform xform3D = new Transform();
-			xform3D.basis = new Basis(
-				new Vector3(xform2D.x.x, xform2D.x.y, 0),
-				new Vector3(xform2D.y.x, xform2D.y.y, 0),
-				new Vector3(0, 0, 1)
-			);
-			xform3D.origin = new Vector3(xform2D.origin.x, xform2D.origin.y, 0);
-			_multiMesh.SetInstanceTransform(i, xform3D);
+		// Generate other scatter
+		SpawnScatter(ref index, 1500, hills, extent, true, rng);
+		SpawnScatter(ref index, 750, mountains, extent, true, rng);
+		SpawnScatter(ref index, 300, ponds, extent, false, rng);
+		SpawnScatter(ref index, 100, camps, extent, true, rng);
+		
 
-			// Pick a tile from the spritesheet
-			int u = rng.RandiRange(0, cols - 1);
-			int v = rng.RandiRange(0, rows - 1);
-
-			// Normalize tile coords and store in Color.rg
-			float uNorm = (float)u / (float)cols;
-			float vNorm = (float)v / (float)rows;
-			_multiMesh.SetInstanceColor(i, new Color(uNorm, vNorm, 0));
-		}
+		SpawnCities(ref index);
+		GD.Print("Cities count: ", _cities.Count);
 
 		// Pass sheet size to shader
 		mat.SetShaderParam("sheet_size", new Vector2(cols, rows));
 	}
-
 
 	
 	public override void _Ready()
@@ -111,7 +307,12 @@ public class BaseGameHandler : Node2D
 		_line           = GetNode<Line2D>("LineLayer/TargetLine");
 		_glassEffect    = GetNode<ColorRect>("GlassLayer/GlassEffect");
 		_glassMaterial  = (ShaderMaterial)_glassEffect.Material;
-
+		_labelContainer = GetNodeOrNull<Node2D>("CityLabels");
+		if (_labelContainer == null)
+		{
+			GD.PrintErr("CityLabels node not found!");
+			return;
+		}
 		// Center immediately
 		CenterPlayer();
 		GetViewport().Connect("size_changed", this, nameof(OnViewportSizeChanged));
@@ -139,6 +340,11 @@ public class BaseGameHandler : Node2D
 			{
 				_isDragging = true;
 				UpdateTarget(mb.Position);
+						foreach (var city in _cities)
+						{
+							Vector2 cityPos = (Vector2)city.GetMeta("world_pos");
+							Vector2 toCity = cityPos - _worldPos;	
+						}
 			}
 			else
 			{
@@ -223,5 +429,51 @@ public class BaseGameHandler : Node2D
 		_line.Points = new Vector2[] { screenCenter, screenTarget };
 		
 		_scatter.Position = -_worldPos;
+		_labelContainer.Position = -_worldPos;
+		
+		
+		float cityProximityRadius = 150f;
+		Cityscript closestCity = null;
+		float closestDist = float.MaxValue;
+
+		foreach (var city in _cities)
+		{
+			Vector2 cityScreen = ((Vector2)city.GetMeta("world_pos") - _worldPos);
+			Vector2 toCityScreen = cityScreen - screenCenter;
+			float dist = toCityScreen.Length();
+
+			if (dist < cityProximityRadius && dist < closestDist)
+			{
+				closestCity = city;
+				closestDist = dist;
+			}
+		}
+
+		
+		if (closestCity != null)
+		{
+			ShowCityPrompt(closestCity);
+		}
+		else
+		{
+			HideCityPrompt();
+		}
+
+	}
+	private void ShowCityPrompt(Cityscript city)
+	{
+		var prompt = GetNode<NinePatchRect>("CityPrompt");
+		var label = prompt.GetNode<Label>("LabelPrototype2/Label");
+		label.Text = $"Press space to enter {city.Name}";
+		prompt.Visible = true;
+
+		Vector2 cityScreenPos = (city.GlobalPosition - _worldPos);
+		prompt.RectPosition = cityScreenPos - prompt.RectSize * 0.5f - new Vector2(0, 70);
+
+	}
+
+	private void HideCityPrompt()
+	{
+		GetNode<NinePatchRect>("CityPrompt").Visible = false;
 	}
 }
