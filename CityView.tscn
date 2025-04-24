@@ -1,28 +1,83 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://Barlow-Black.ttf" type="DynamicFontData" id=1]
+[ext_resource path="res://assets/banner1.png" type="Texture" id=2]
+[ext_resource path="res://CityView.cs" type="Script" id=3]
 
 [sub_resource type="DynamicFont" id=1]
-size = 24
+size = 36
 font_data = ExtResource( 1 )
 
 [node name="Control" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+script = ExtResource( 3 )
 
-[node name="Panel" type="Panel" parent="."]
+[node name="Panel" type="VBoxContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="Panel" type="Panel" parent="Panel"]
-anchor_right = 1.0
-margin_left = 35.0
-margin_top = 35.0
-margin_right = -35.0
-margin_bottom = 70.0
+[node name="TopPanel" type="Panel" parent="Panel"]
+margin_right = 1024.0
+margin_bottom = 99.0
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.2
 
-[node name="Label" type="Label" parent="Panel/Panel"]
-margin_right = 70.0
-margin_bottom = 14.0
+[node name="HBoxContainer" type="Control" parent="Panel/TopPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="CityName" type="Label" parent="Panel/TopPanel/HBoxContainer"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = 30.0
+margin_top = -22.0
+margin_right = 192.0
+margin_bottom = 22.0
 custom_fonts/font = SubResource( 1 )
 text = "LIBREVILLE"
+align = 1
+valign = 1
+
+[node name="ReferenceRect2" type="Control" parent="Panel/TopPanel/HBoxContainer"]
+margin_left = 131.0
+margin_right = 231.0
+margin_bottom = 95.0
+rect_min_size = Vector2( 100, 0 )
+size_flags_horizontal = 3
+
+[node name="TextureRect" type="TextureRect" parent="Panel/TopPanel/HBoxContainer"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -23.0
+margin_right = 23.0
+margin_bottom = 95.0
+texture = ExtResource( 2 )
+
+[node name="ReferenceRect" type="Control" parent="Panel/TopPanel/HBoxContainer"]
+margin_left = 285.0
+margin_right = 385.0
+margin_bottom = 95.0
+rect_min_size = Vector2( 100, 0 )
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="Panel/TopPanel/HBoxContainer"]
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+margin_left = -163.0
+margin_top = -12.0
+margin_right = -30.0
+margin_bottom = 12.0
+size_flags_vertical = 4
+text = "Back to Map"
+
+[node name="MainPanel" type="Panel" parent="Panel"]
+margin_top = 103.0
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[connection signal="pressed" from="Panel/TopPanel/HBoxContainer/Button" to="." method="_on_Button_pressed"]

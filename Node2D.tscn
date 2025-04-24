@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=2]
+[gd_scene load_steps=31 format=2]
 
 [ext_resource path="res://assets/player.png" type="Texture" id=1]
 [ext_resource path="res://assets/background.png" type="Texture" id=2]
@@ -11,6 +11,15 @@
 [ext_resource path="res://Cityscript.cs" type="Script" id=9]
 [ext_resource path="res://assets/scroll.png" type="Texture" id=10]
 [ext_resource path="res://LabelPrototype.cs" type="Script" id=11]
+[ext_resource path="res://assets/banner1.png" type="Texture" id=12]
+[ext_resource path="res://assets/banner6.png" type="Texture" id=13]
+[ext_resource path="res://assets/banner9.png" type="Texture" id=14]
+[ext_resource path="res://assets/banner4.png" type="Texture" id=15]
+[ext_resource path="res://assets/banner2.png" type="Texture" id=16]
+[ext_resource path="res://assets/banner3.png" type="Texture" id=17]
+[ext_resource path="res://assets/banner5.png" type="Texture" id=18]
+[ext_resource path="res://assets/banner7.png" type="Texture" id=19]
+[ext_resource path="res://assets/banner8.png" type="Texture" id=20]
 
 [sub_resource type="Shader" id=1]
 code = "shader_type canvas_item;
@@ -277,53 +286,62 @@ layer = -1
 [node name="Libreville" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 121, -129 )
 script = ExtResource( 9 )
+bannerTex = ExtResource( 12 )
 
 [node name="Antoniata" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -355, 432 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker2"
+bannerTex = ExtResource( 19 )
 
 [node name="Connaught" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 449, 1012 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker3"
 FlipX = true
+bannerTex = ExtResource( 13 )
 
 [node name="Leinster" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 1668, 404 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker4"
 FlipX = true
+bannerTex = ExtResource( 18 )
 
 [node name="Farreach" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -899, -279 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker5"
 FlipX = true
+bannerTex = ExtResource( 20 )
 
 [node name="Braisewater" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -1115, 944 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker6"
 FlipX = true
+bannerTex = ExtResource( 14 )
 
 [node name="Towersted" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 1573, -362 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker7"
 FlipX = true
+bannerTex = ExtResource( 16 )
 
 [node name="Antecedent" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 505, -509 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker8"
 FlipX = true
+bannerTex = ExtResource( 17 )
 
 [node name="Dececedent" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 679, -569 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker9"
 FlipX = true
+bannerTex = ExtResource( 15 )
 
 [node name="GlassLayer" type="CanvasLayer" parent="."]
 
@@ -372,3 +390,23 @@ margin_top = 11.0
 margin_right = -13.0
 margin_bottom = 59.0
 text = "||"
+
+[node name="Minimap" type="Control" parent="UILayer"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -156.0
+margin_top = -156.0
+
+[node name="ColorRect2" type="ColorRect" parent="UILayer/Minimap"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0.752941, 0.737255, 0.678431, 1 )
+
+[node name="ColorRect" type="ColorRect" parent="UILayer/Minimap"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 5.0
+margin_top = 5.0
+color = Color( 0.819608, 0.807843, 0.764706, 1 )

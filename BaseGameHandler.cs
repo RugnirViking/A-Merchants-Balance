@@ -2,6 +2,15 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+public static class GameState
+{
+	public static string CurrentCity;
+	public static Texture CityBanner;
+	public static bool isFirstLoad = true;
+	public static ulong firstLoadSeed = 0;
+	public static Vector2 worldPos;
+}
+
 public class BaseGameHandler : Node2D
 {
 	// Speed the world scrolls under the player (px/sec)
@@ -34,6 +43,10 @@ public class BaseGameHandler : Node2D
 	
 	private List<Vector2> _scatterPositions = new List<Vector2>();
 	private List<Cityscript> _cities = new List<Cityscript>();
+	
+	// Keeping track of closest city for the enter city popup
+	private bool _isNearCity = false;
+	private Cityscript _closestCity = null;
 	
 	private Dictionary<string, Vector2> _atlasMap = new Dictionary<string, Vector2>
 	{
@@ -235,9 +248,9 @@ public class BaseGameHandler : Node2D
 		
 		// Just manually center it instead of using pivot
 		Vector2 offset = new Vector2(size.x / 2f, size.y); // center-bottom
-		panel.RectPosition = worldPos - offset + new Vector2(0, 90);
+		panel.RectPosition = worldPos - offset + new Vector2(0, 100);
 	}
-	private void InitScatter()
+	private void InitScatter(RandomNumberGenerator rng)
 	{
 		_scatter = GetNode<MultiMeshInstance2D>("BackgroundLayer/ScatterLayer");
 		_multiMesh = new MultiMesh();
@@ -264,8 +277,6 @@ public class BaseGameHandler : Node2D
 		_multiMesh.Mesh = quad;
 
 		int index = 0;
-		var rng = new RandomNumberGenerator();
-		rng.Randomize();
 
 		// Set the correct instance count
 		int magicNumberCount = 3250;
@@ -313,13 +324,39 @@ public class BaseGameHandler : Node2D
 			GD.PrintErr("CityLabels node not found!");
 			return;
 		}
+		
+		var rng = new RandomNumberGenerator();
+		if (GameState.isFirstLoad)
+		{
+			rng.Randomize();
+			GameState.isFirstLoad = false;
+			GameState.firstLoadSeed = rng.Seed;
+		} else{
+			rng.SetSeed(GameState.firstLoadSeed);
+			_worldPos = GameState.worldPos;
+			_targetPos = _worldPos;
+		}
 		// Center immediately
 		CenterPlayer();
 		GetViewport().Connect("size_changed", this, nameof(OnViewportSizeChanged));
 		
-		InitScatter();
+		InitScatter(rng);
+		// update shader scroll in ready 
+		UpdateShaderScroll();
 	}
-
+	
+	private void UpdateShaderScroll()
+	{
+		Vector2 sz = _texture.GetSize();
+		Vector2 uv = new Vector2(
+			(_worldPos.x / sz.x) % 1f,
+			(_worldPos.y / sz.y) % 1f
+		);
+		if (uv.x < 0) uv.x += 1f;
+		if (uv.y < 0) uv.y += 1f;
+		_material.SetShaderParam("uv_offset", uv);
+	}
+	
 	private void OnViewportSizeChanged()
 	{
 		CenterPlayer();
@@ -354,6 +391,13 @@ public class BaseGameHandler : Node2D
 		else if (@event is InputEventMouseMotion mm && _isDragging)
 		{
 			UpdateTarget(mm.Position);
+		}
+		else if(@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Scancode == (int)KeyList.Space)
+		{
+			if (_isNearCity && _closestCity != null)
+			{
+				EnterCityView(_closestCity);
+			}
 		}
 	}
 
@@ -410,15 +454,7 @@ public class BaseGameHandler : Node2D
 			if (step.Length() > diff.Length()) step = diff;
 			_worldPos += step;
 
-			// scroll the shader‐driven background
-			Vector2 sz = _texture.GetSize();
-			Vector2 uv = new Vector2(
-				(_worldPos.x / sz.x) % 1f,
-				(_worldPos.y / sz.y) % 1f
-			);
-			if (uv.x < 0) uv.x += 1f;
-			if (uv.y < 0) uv.y += 1f;
-			_material.SetShaderParam("uv_offset", uv);
+			UpdateShaderScroll();
 		}
 
 		// **draw the line** in screen‑space
@@ -435,7 +471,8 @@ public class BaseGameHandler : Node2D
 		float cityProximityRadius = 150f;
 		Cityscript closestCity = null;
 		float closestDist = float.MaxValue;
-
+		_isNearCity = false;
+		_closestCity = null;
 		foreach (var city in _cities)
 		{
 			Vector2 cityScreen = ((Vector2)city.GetMeta("world_pos") - _worldPos);
@@ -444,8 +481,10 @@ public class BaseGameHandler : Node2D
 
 			if (dist < cityProximityRadius && dist < closestDist)
 			{
-				closestCity = city;
-				closestDist = dist;
+				closestCity  = city;
+				closestDist  = dist;
+				_isNearCity  = true;
+				_closestCity = closestCity;
 			}
 		}
 
@@ -453,6 +492,7 @@ public class BaseGameHandler : Node2D
 		if (closestCity != null)
 		{
 			ShowCityPrompt(closestCity);
+			
 		}
 		else
 		{
@@ -460,6 +500,20 @@ public class BaseGameHandler : Node2D
 		}
 
 	}
+	
+	private void EnterCityView(Cityscript city)
+	{
+		Vector2 screenCenter = GetViewport().Size * 0.5f;
+		GD.Print("Entering city: ", city.Name);
+		GameState.CurrentCity = city.Name;
+		GameState.CityBanner = city.bannerTex;
+		GameState.worldPos = (Vector2)city.GetMeta("world_pos") - screenCenter;
+		
+		
+		var cityView = (PackedScene)GD.Load("res://CityView.tscn");
+		GetTree().ChangeSceneTo(cityView);
+	}
+	
 	private void ShowCityPrompt(Cityscript city)
 	{
 		var prompt = GetNode<NinePatchRect>("CityPrompt");
