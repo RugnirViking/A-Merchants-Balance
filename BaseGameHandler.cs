@@ -11,8 +11,8 @@ public static class GameState
 	public static ulong firstLoadSeed = 0;
 	public static Vector2 worldPos;
 	
-	public static Dictionary<string, List<Actor>> CityActors 
-		= new Dictionary<string, List<Actor>>();
+	public static Dictionary<string, MarketSimulator> CityEconomies 
+		= new Dictionary<string, MarketSimulator>();
 }
 
 public class BaseGameHandler : Node2D
@@ -598,9 +598,6 @@ public class BaseGameHandler : Node2D
 		GameState.CurrentCity = city.Name;
 		GameState.CityBanner = city.bannerTex;
 		GameState.worldPos = (Vector2)city.GetMeta("world_pos") - screenCenter;
-		foreach (Cityscript _city in _cities){
-			GameState.CityActors[_city.Name] = _city._actors; // we add them all so we can reconstruct later
-		}
 		
 		
 		var cityView = (PackedScene)GD.Load("res://CityView.tscn");

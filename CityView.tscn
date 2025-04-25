@@ -333,15 +333,42 @@ margin_bottom = 26.0
 custom_fonts/font = ExtResource( 4 )
 text = "MARKET"
 
-[node name="MarketGraph" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
 margin_top = 30.0
 margin_right = 325.0
-margin_bottom = 249.0
+margin_bottom = 56.0
+
+[node name="BuyButton" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/HBoxContainer"]
+margin_right = 160.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 4 )
+text = "BUY"
+
+[node name="SellButton" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/HBoxContainer"]
+margin_left = 164.0
+margin_right = 325.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 4 )
+text = "SELL"
+
+[node name="MarketGraph" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
+margin_top = 60.0
+margin_right = 325.0
+margin_bottom = 228.0
 size_flags_vertical = 3
 script = ExtResource( 9 )
 
 [node name="Line" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
 position = Vector2( -20, -381 )
+
+[node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
+margin_top = 232.0
+margin_right = 325.0
+margin_bottom = 249.0
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.1
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2"]
 margin_left = 349.0
