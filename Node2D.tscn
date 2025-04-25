@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=2]
+[gd_scene load_steps=24 format=2]
 
 [ext_resource path="res://assets/player.png" type="Texture" id=1]
 [ext_resource path="res://assets/background.png" type="Texture" id=2]
@@ -11,15 +11,6 @@
 [ext_resource path="res://Cityscript.cs" type="Script" id=9]
 [ext_resource path="res://assets/scroll.png" type="Texture" id=10]
 [ext_resource path="res://LabelPrototype.cs" type="Script" id=11]
-[ext_resource path="res://assets/banner1.png" type="Texture" id=12]
-[ext_resource path="res://assets/banner6.png" type="Texture" id=13]
-[ext_resource path="res://assets/banner9.png" type="Texture" id=14]
-[ext_resource path="res://assets/banner4.png" type="Texture" id=15]
-[ext_resource path="res://assets/banner2.png" type="Texture" id=16]
-[ext_resource path="res://assets/banner3.png" type="Texture" id=17]
-[ext_resource path="res://assets/banner5.png" type="Texture" id=18]
-[ext_resource path="res://assets/banner7.png" type="Texture" id=19]
-[ext_resource path="res://assets/banner8.png" type="Texture" id=20]
 [ext_resource path="res://Minimap.cs" type="Script" id=21]
 [ext_resource path="res://PauseButton.cs" type="Script" id=22]
 
@@ -291,62 +282,53 @@ layer = -2
 [node name="Libreville" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 121, -129 )
 script = ExtResource( 9 )
-bannerTex = ExtResource( 12 )
 
 [node name="Antoniata" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -355, 432 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker2"
-bannerTex = ExtResource( 19 )
 
 [node name="Connaught" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 449, 1012 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker3"
 FlipX = true
-bannerTex = ExtResource( 13 )
 
 [node name="Leinster" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 1668, 404 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker4"
 FlipX = true
-bannerTex = ExtResource( 18 )
 
 [node name="Farreach" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -899, -279 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker5"
 FlipX = true
-bannerTex = ExtResource( 20 )
 
 [node name="Braisewater" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -1115, 944 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker6"
 FlipX = true
-bannerTex = ExtResource( 14 )
 
 [node name="Towersted" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 1573, -362 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker7"
 FlipX = true
-bannerTex = ExtResource( 16 )
 
 [node name="Antecedent" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 505, -509 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker8"
 FlipX = true
-bannerTex = ExtResource( 17 )
 
 [node name="Dececedent" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 679, -569 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker9"
 FlipX = true
-bannerTex = ExtResource( 15 )
 
 [node name="GlassLayer" type="CanvasLayer" parent="."]
 
@@ -383,7 +365,7 @@ margin_bottom = 51.0
 custom_fonts/normal_font = SubResource( 3 )
 text = "Money: 12"
 
-[node name="Button" type="Button" parent="UILayer"]
+[node name="pauseButton" type="Button" parent="UILayer"]
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -73.0
@@ -393,7 +375,7 @@ margin_bottom = 59.0
 text = "||"
 script = ExtResource( 22 )
 
-[node name="Minimap" type="Control" parent="UILayer"]
+[node name="miniMap" type="Control" parent="UILayer"]
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -403,23 +385,23 @@ margin_top = -156.0
 mouse_filter = 1
 script = ExtResource( 21 )
 
-[node name="ColorRect2" type="ColorRect" parent="UILayer/Minimap"]
+[node name="ColorRect2" type="ColorRect" parent="UILayer/miniMap"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color( 0.752941, 0.737255, 0.678431, 1 )
 
-[node name="ColorRect" type="ColorRect" parent="UILayer/Minimap"]
+[node name="ColorRect" type="ColorRect" parent="UILayer/miniMap"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0
 margin_top = 5.0
 color = Color( 0.819608, 0.807843, 0.764706, 1 )
 
-[node name="CitiesContainer" type="Control" parent="UILayer/Minimap"]
+[node name="CitiesContainer" type="Control" parent="UILayer/miniMap"]
 margin_right = 40.0
 margin_bottom = 40.0
 
-[node name="PlayerDot" type="ColorRect" parent="UILayer/Minimap"]
+[node name="PlayerDot" type="ColorRect" parent="UILayer/miniMap"]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -430,5 +412,138 @@ margin_right = 2.5
 margin_bottom = 2.5
 color = Color( 0.156863, 0.717647, 0.909804, 1 )
 
-[connection signal="pressed" from="UILayer/Button" to="UILayer/Button" method="_on_Button_pressed"]
-[connection signal="mouse_exited" from="UILayer/Minimap/ColorRect2" to="." method="_on_ColorRect2_mouse_exited"]
+[node name="pauseMenuBackground" type="Control" parent="UILayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="pauseMenu" type="PopupMenu" parent="UILayer/pauseMenuBackground"]
+visible = true
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -150.0
+margin_top = -100.0
+margin_right = 150.0
+margin_bottom = 100.0
+rect_min_size = Vector2( 300, 200 )
+size_flags_stretch_ratio = 7.24
+popup_exclusive = true
+
+[node name="pauseMenuVBoxContainer" type="VBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 10.0
+margin_top = 10.0
+margin_right = -10.0
+margin_bottom = -10.0
+
+[node name="gameVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
+margin_right = 280.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="gameVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer"]
+margin_right = 92.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Game Volume"
+autowrap = true
+
+[node name="gameVolumeSlider" type="HSlider" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer"]
+margin_left = 96.0
+margin_right = 280.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 150, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 2
+rounded = true
+tick_count = 10
+ticks_on_borders = true
+
+[node name="soundEffectsVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
+margin_top = 46.0
+margin_right = 280.0
+margin_bottom = 88.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="soundEffectsVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/soundEffectsVolumeHBoxContainer"]
+margin_right = 92.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Sound Effects Volume"
+autowrap = true
+
+[node name="soundEffectsVolumeSlider" type="HSlider" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/soundEffectsVolumeHBoxContainer"]
+margin_left = 96.0
+margin_right = 280.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 150, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 2
+rounded = true
+tick_count = 10
+ticks_on_borders = true
+
+[node name="ambientVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
+margin_top = 92.0
+margin_right = 280.0
+margin_bottom = 134.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ambientVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/ambientVolumeHBoxContainer"]
+margin_right = 92.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Ambient Volume"
+autowrap = true
+
+[node name="ambientVolumeSlider" type="HSlider" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/ambientVolumeHBoxContainer"]
+margin_left = 96.0
+margin_right = 280.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 150, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 2
+rounded = true
+tick_count = 10
+ticks_on_borders = true
+
+[node name="musicVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
+margin_top = 138.0
+margin_right = 280.0
+margin_bottom = 180.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="musicVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/musicVolumeHBoxContainer"]
+margin_right = 92.0
+margin_bottom = 42.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Music Volume"
+autowrap = true
+
+[node name="musicVolumeSlider" type="HSlider" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/musicVolumeHBoxContainer"]
+margin_left = 96.0
+margin_right = 280.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 150, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 2
+rounded = true
+tick_count = 10
+ticks_on_borders = true
+
+[connection signal="pressed" from="UILayer/pauseButton" to="UILayer/pauseButton" method="_on_Button_pressed"]
+[connection signal="mouse_exited" from="UILayer/miniMap/ColorRect2" to="." method="_on_ColorRect2_mouse_exited"]
