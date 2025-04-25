@@ -197,7 +197,7 @@ public static class ListExtensions
 /// </summary>
 public class MarketSimulator
 {
-	private int _numGoods;
+	public int _numGoods;
 	private float[] MidPrice;
 	private float[] BasePrice;
 	private float[] Stickiness;

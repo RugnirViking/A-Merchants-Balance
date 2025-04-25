@@ -13,6 +13,11 @@ public static class GameState
 	
 	public static Dictionary<string, MarketSimulator> CityEconomies 
 		= new Dictionary<string, MarketSimulator>();
+		
+		
+	// Player stuff
+	public static int gold = 0;
+	public static int[] goodsOwned;
 }
 
 public class BaseGameHandler : Node2D

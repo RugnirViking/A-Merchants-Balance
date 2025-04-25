@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://Barlow-Black.ttf" type="DynamicFontData" id=1]
 [ext_resource path="res://assets/banner1.png" type="Texture" id=2]
@@ -9,13 +9,10 @@
 [ext_resource path="res://assets/ninepatchbutton.png" type="Texture" id=7]
 [ext_resource path="res://assets/castleview.png" type="Texture" id=8]
 [ext_resource path="res://GraphControl.cs" type="Script" id=9]
+[ext_resource path="res://barlowFontSize36.tres" type="DynamicFont" id=10]
 
 [sub_resource type="StyleBoxFlat" id=4]
 bg_color = Color( 0.870588, 0.780392, 0.607843, 1 )
-
-[sub_resource type="DynamicFont" id=1]
-size = 36
-font_data = ExtResource( 1 )
 
 [sub_resource type="StyleBoxFlat" id=2]
 bg_color = Color( 0.870588, 0.780392, 0.607843, 1 )
@@ -25,10 +22,22 @@ size = 28
 outline_color = Color( 0.453125, 0.364413, 0.194702, 1 )
 font_data = ExtResource( 1 )
 
+[sub_resource type="StyleBoxFlat" id=6]
+bg_color = Color( 0.529412, 0.403922, 0.239216, 1 )
+
+[sub_resource type="Theme" id=5]
+LineEdit/colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+LineEdit/fonts/font = ExtResource( 4 )
+
+[sub_resource type="StyleBoxFlat" id=7]
+
 [node name="Control" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource( 3 )
+LabelFont = ExtResource( 4 )
+LabelColor = Color( 0.454902, 0.364706, 0.196078, 1 )
+normalColor = Color( 0.290196, 0.235294, 0.184314, 1 )
 
 [node name="Panel" type="VBoxContainer" parent="."]
 anchor_right = 1.0
@@ -62,17 +71,33 @@ margin_left = 30.0
 margin_top = -22.0
 margin_right = 192.0
 margin_bottom = 22.0
-custom_fonts/font = SubResource( 1 )
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 10 )
 text = "LIBREVILLE"
 align = 1
 valign = 1
 
 [node name="ReferenceRect2" type="Control" parent="Panel/TopPanel/HBoxContainer"]
-margin_left = 131.0
-margin_right = 231.0
-margin_bottom = 95.0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = 50.0
+margin_right = 329.0
 rect_min_size = Vector2( 100, 0 )
 size_flags_horizontal = 3
+
+[node name="Gold" type="Label" parent="Panel/TopPanel/HBoxContainer/ReferenceRect2"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -102.0
+margin_right = 112.0
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 10 )
+text = "GOLD: 10000"
+align = 1
+valign = 1
+autowrap = true
 
 [node name="ReferenceRect" type="Control" parent="Panel/TopPanel/HBoxContainer"]
 margin_left = 285.0
@@ -136,9 +161,9 @@ anchor_bottom = 1.0
 alignment = 1
 
 [node name="Label" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 13.0
+margin_top = 36.0
 margin_right = 454.0
-margin_bottom = 47.0
+margin_bottom = 70.0
 custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
 custom_fonts/font = SubResource( 3 )
 text = "QUESTS"
@@ -146,9 +171,9 @@ align = 1
 valign = 2
 
 [node name="QuestContainer" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 51.0
+margin_top = 74.0
 margin_right = 454.0
-margin_bottom = 94.0
+margin_bottom = 117.0
 
 [node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer"]
 margin_right = 17.0
@@ -187,9 +212,9 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.05
 
 [node name="QuestContainer2" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 98.0
+margin_top = 121.0
 margin_right = 454.0
-margin_bottom = 141.0
+margin_bottom = 164.0
 
 [node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer2"]
 margin_right = 17.0
@@ -228,9 +253,9 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.05
 
 [node name="QuestContainer3" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 145.0
+margin_top = 168.0
 margin_right = 454.0
-margin_bottom = 188.0
+margin_bottom = 211.0
 
 [node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer3"]
 margin_right = 17.0
@@ -268,47 +293,6 @@ margin_bottom = 43.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.05
 
-[node name="QuestContainer4" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 192.0
-margin_right = 454.0
-margin_bottom = 235.0
-
-[node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer4"]
-margin_right = 17.0
-margin_bottom = 43.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
-
-[node name="Label2" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer4"]
-margin_left = 21.0
-margin_right = 361.0
-margin_bottom = 43.0
-size_flags_horizontal = 3
-custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
-custom_fonts/font = ExtResource( 4 )
-text = "QUEST 1: Something really bad happened, please help"
-align = 1
-valign = 2
-autowrap = true
-
-[node name="Button" type="TextureButton" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer4"]
-margin_left = 365.0
-margin_right = 433.0
-margin_bottom = 43.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.2
-texture_normal = ExtResource( 5 )
-texture_pressed = ExtResource( 6 )
-expand = true
-stretch_mode = 5
-
-[node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer4"]
-margin_left = 437.0
-margin_right = 454.0
-margin_bottom = 43.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
-
 [node name="HBoxContainer2" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer"]
 margin_top = 252.0
 margin_right = 1024.0
@@ -322,41 +306,46 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.05
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2"]
-margin_left = 20.0
-margin_right = 345.0
+visible = false
+margin_left = 16.0
+margin_right = 263.0
 margin_bottom = 249.0
 size_flags_horizontal = 3
 
 [node name="Button" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
-margin_right = 325.0
-margin_bottom = 26.0
+margin_right = 247.0
+margin_bottom = 20.0
+custom_colors/font_color = Color( 0.828125, 0.687095, 0.417297, 1 )
 custom_fonts/font = ExtResource( 4 )
+custom_styles/normal = SubResource( 6 )
 text = "MARKET"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
-margin_top = 30.0
-margin_right = 325.0
-margin_bottom = 56.0
+margin_top = 24.0
+margin_right = 247.0
+margin_bottom = 50.0
 
 [node name="BuyButton" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/HBoxContainer"]
-margin_right = 160.0
+margin_right = 121.0
 margin_bottom = 26.0
 size_flags_horizontal = 3
+theme = SubResource( 5 )
 custom_fonts/font = ExtResource( 4 )
+custom_styles/normal = SubResource( 7 )
 text = "BUY"
 
 [node name="SellButton" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/HBoxContainer"]
-margin_left = 164.0
-margin_right = 325.0
+margin_left = 125.0
+margin_right = 247.0
 margin_bottom = 26.0
 size_flags_horizontal = 3
 custom_fonts/font = ExtResource( 4 )
 text = "SELL"
 
 [node name="MarketGraph" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
-margin_top = 60.0
-margin_right = 325.0
-margin_bottom = 228.0
+margin_top = 54.0
+margin_right = 247.0
+margin_bottom = 227.0
 size_flags_vertical = 3
 script = ExtResource( 9 )
 LinePaths = [ NodePath("Line"), NodePath("Line2"), NodePath("Line3"), NodePath("Line4"), NodePath("Line5"), NodePath("Line6"), NodePath("Line7"), NodePath("Line8") ]
@@ -408,35 +397,106 @@ width = 3.0
 default_color = Color( 0.729412, 1, 0.4, 1 )
 
 [node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
-margin_top = 232.0
-margin_right = 325.0
+margin_top = 231.0
+margin_right = 247.0
 margin_bottom = 249.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.1
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2"]
-margin_left = 349.0
-margin_right = 674.0
-margin_bottom = 249.0
-size_flags_horizontal = 3
-
-[node name="Button" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer2"]
-margin_right = 325.0
-margin_bottom = 26.0
-custom_fonts/font = ExtResource( 4 )
-text = "TAVERN"
-
-[node name="VBoxContainer3" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2"]
-margin_left = 678.0
+[node name="TradePanel" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2"]
+margin_left = 20.0
 margin_right = 1003.0
 margin_bottom = 249.0
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
 
-[node name="Button" type="Button" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer3"]
-margin_right = 325.0
-margin_bottom = 26.0
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel"]
+margin_right = 983.0
+margin_bottom = 20.0
+
+[node name="Label" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_right = 121.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
 custom_fonts/font = ExtResource( 4 )
-text = "TAVERN"
+text = "Good"
+
+[node name="Label2" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 125.0
+margin_right = 247.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Amount"
+
+[node name="Label3" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 251.0
+margin_right = 337.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.7
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Max"
+
+[node name="Label4" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 341.0
+margin_right = 426.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.7
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Min"
+
+[node name="Label5" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 430.0
+margin_right = 515.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.7
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Buy"
+
+[node name="Label6" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 519.0
+margin_right = 605.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.7
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Sell"
+
+[node name="Label7" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 609.0
+margin_right = 731.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Buy Price(Total)"
+
+[node name="Label8" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 735.0
+margin_right = 857.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Sell Price(Total)"
+
+[node name="Label9" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/TradePanel/HBoxContainer"]
+margin_left = 861.0
+margin_right = 983.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 4 )
+text = "Amount Owned"
 
 [node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2"]
 margin_left = 1007.0
