@@ -359,9 +359,53 @@ margin_right = 325.0
 margin_bottom = 228.0
 size_flags_vertical = 3
 script = ExtResource( 9 )
+LinePaths = [ NodePath("Line"), NodePath("Line2"), NodePath("Line3"), NodePath("Line4"), NodePath("Line5"), NodePath("Line6"), NodePath("Line7"), NodePath("Line8") ]
 
 [node name="Line" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
 position = Vector2( -20, -381 )
+width = 3.0
+
+[node name="Line2" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 1, 0.4, 0.4, 1 )
+
+[node name="Line3" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 0.545098, 1, 0.4, 1 )
+
+[node name="Line4" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 0.4, 1, 0.956863, 1 )
+
+[node name="Line5" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 0.996078, 0.4, 1, 1 )
+
+[node name="Line6" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 1, 0.960784, 0.4, 1 )
+
+[node name="Line7" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 1, 0.807843, 0.4, 1 )
+
+[node name="Line8" type="Line2D" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer/MarketGraph"]
+position = Vector2( -20, -381 )
+points = PoolVector2Array( -31, 100 )
+width = 3.0
+default_color = Color( 0.729412, 1, 0.4, 1 )
 
 [node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer2/VBoxContainer"]
 margin_top = 232.0

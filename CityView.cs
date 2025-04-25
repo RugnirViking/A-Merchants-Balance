@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 
 
@@ -53,18 +54,14 @@ public class CityView : Control
 		if (Engine.GetFramesDrawn() % 60 == 0)
 		{
 			_economy.StepSimulation();
-			_graph.AddValue((float)_economy.AverageExpected);
-		}
-		
-		if (Engine.GetFramesDrawn() % 60 == 0)
-		{
+			
+			float[] prices = _economy.GetPrices();
+			_graph.AddValues(prices);
+			
 			GD.Print(
-				$"City {Name}: Agents={_economy.AgentCount}, AvgGoods={_economy.AverageGoodsPerAgent:F2}, " +
-				$"TotalGoods={_economy.TotalGoods}, AvgExpected={_economy.AverageExpected:F2}, " +
-				$"AvgCurrUtil={_economy.AverageCurrentUtility:F2}, AvgPotUtil={_economy.AveragePotentialUtility:F2}, " +
-				$"AvgMoney={_economy.AverageMoney:F2}, Produced={_economy.Produced:F2}, " + 
-				$"Consumed={_economy.Consumed:F2}, " 
-				 
+				$"City {Name}: Prices=["
+				+ string.Join(", ", prices.Select(p => p.ToString("F2")))
+				+ "]"
 			);
 		}
 	}
@@ -78,12 +75,12 @@ public class CityView : Control
 	
 	private void OnBuyPressed()
 	{
-		_economy.ExternalBuy(BuyMarkup, 100);
+		_economy.ExternalBuy(1, (float)1.10, 100);
 	}
 
 	private void OnSellPressed()
 	{
-		_economy.ExternalSell(SellMarkdown, 100);
+		_economy.ExternalSell(1, (float)SellMarkdown, 100);
 	}
 }
 

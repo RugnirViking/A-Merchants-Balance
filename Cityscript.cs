@@ -12,17 +12,14 @@ public class Cityscript : Position2D
 	[Export] public bool FlipX = false;
 	[Export] public Texture bannerTex;
 	
-	[Export] public int NumActors = 200;
-	[Export] public double MinPersonal = 1.0;
-	[Export] public double MaxPersonal = 20.0;
-	[Export] public double MinExpected = 1.0;
-	[Export] public double MaxExpected = 20.0;
-	[Export] public int InitialMoney = 100;
-	[Export] public int InitialGoods = 5;
-	[Export] public double HalfPersonalValueAt = 5.0;
-	[Export] public double HalfMoneyUtility = 25.0;
-	[Export] public double HalfLeisureUtility = 3.0;
-	[Export] public int WorkGoods = 1;
+	[Export] public int NumGoods = 8;
+	[Export] public float[] MidPrice = { 10f, 12f, 8f, 14f, 6f, 20f, 5f, 9f };
+	[Export] public float[] Stickiness = { 2f, 8f, 4f, 1f, 0.5f, 10f, 3f, 6f };
+	[Export] public float BuyImpact = 0.25f;
+	[Export] public float SellImpact = 0.25f;
+	[Export] public float Drift = 0.2f;
+	[Export] public float CrossInfluence = 0.05f;
+	[Export] public float SpreadFraction = 0.1f;
 	
 	
 
@@ -41,14 +38,9 @@ public class Cityscript : Position2D
 		}
 		else
 		{
-			// instantiate and cache
 			_economy = new MarketSimulator(
-				Name, _rng,
-				NumActors,
-				MinPersonal, MaxPersonal,
-				MinExpected, MaxExpected,
-				InitialMoney, InitialGoods,
-				HalfPersonalValueAt, 1, HalfMoneyUtility, HalfLeisureUtility, 0.25
+				NumGoods, MidPrice, Stickiness, BuyImpact, SellImpact,
+				Drift, CrossInfluence, SpreadFraction
 			);
 			GameState.CityEconomies[Name] = _economy;
 		}
@@ -59,91 +51,130 @@ public class Cityscript : Position2D
 		if (Engine.GetFramesDrawn() % 600 == 0)
 		{
 			_economy.StepSimulation();
-			GD.Print($"Avg Expected in {Name}: {_economy.AverageExpected:F2}");
 		}
 	}
 }
 
 
-//-----------------------------------
-// Actor with multi-utility and decisions
-//-----------------------------------
 public class Actor
 {
-	public double BaseGoodValue;
-	public double ExpectedMarketValue;
-	public double BeliefVolatility = 0.1;
+	public double[] BaseGoodValue;            // "S" parameter per good
+	public double[] ExpectedMarketValue;      // belief of price per good
+	public int[] GoodsCount;                  // holdings per good
+	public double BeliefVolatility = 0.4;
+
 	public double BaseWorkValue;
 	public double BaseLeisureValue;
-	public int GoodsCount;
-	public int Money;
 	public double Hunger = 0;
+
+	public bool[] didProduce;
+	public int[] didConsume;
+
+	private double[] _halfPersonalAt;         // "D" per good
 	private RandomNumberGenerator _rng;
-	
-	public bool didProduce = false;
-	public bool didConsume = false;
 
-	private double _halfPersonalAt;
-
-	public Actor(double basePV, double exp, int goods, int money, double halfAt, double baseWorkValue, double baseLeisureValue, RandomNumberGenerator rng)
+	public Actor(int numGoods,
+				 double[] basePV,
+				 double[] expV,
+				 int[] initGoods,
+				 int initMoney,
+				 double[] halfAt,
+				 double baseWorkValue,
+				 double baseLeisureValue,
+				 RandomNumberGenerator rng)
 	{
-		BaseGoodValue = basePV;
-		ExpectedMarketValue = exp;
-		GoodsCount = goods;
-		Money = money;
-		_halfPersonalAt = halfAt;
-		BaseWorkValue = baseWorkValue;
-		BaseLeisureValue = baseLeisureValue;
-		_rng = rng;
+		BaseGoodValue       = basePV;
+		ExpectedMarketValue = expV;
+		GoodsCount          = initGoods;
+		Money               = initMoney;
+		_halfPersonalAt     = halfAt;
+		BaseWorkValue       = baseWorkValue;
+		BaseLeisureValue    = baseLeisureValue;
+		_rng                = rng;
 	}
 
-	// diminishing utility: U(x) = S/( (x/D)^3 +1 )
+	public int Money { get; set; }
+
+	// diminishing utility: U(S, x, D) = S / ((x/D)^3 + 1)
 	private double Utility(double S, double x, double D)
 		=> S / (Math.Pow(x / D, 3) + 1);
 
-	public double CurrentGoodUtility()   => Utility(BaseGoodValue, GoodsCount, _halfPersonalAt);
-	public double PotentialGoodUtility() => Utility(BaseGoodValue, GoodsCount+1, _halfPersonalAt);
+	// Sum of current utilities over goods
+	public double CurrentUtility()
+		=> Enumerable.Range(0, GoodsCount.Length)
+					 .Sum(i => Utility(BaseGoodValue[i], GoodsCount[i], _halfPersonalAt[i]));
 
+	// Sum of potential utilities if acquiring one more of each good
+	public double PotentialUtility(int goodIndex)
+		=> Utility(BaseGoodValue[goodIndex], GoodsCount[goodIndex] + 1, _halfPersonalAt[goodIndex]);
 
-	public bool IsBuyer()  => ExpectedMarketValue < PotentialGoodUtility();
-	public bool IsSeller() => ExpectedMarketValue >= CurrentGoodUtility();
-	public bool CanTrade(IEnumerable<Actor> all)
-		=> all.Any(o => o.IsSeller() && o.GoodsCount>0 && ExpectedMarketValue>=o.ExpectedMarketValue && Money>=o.ExpectedMarketValue);
+	public bool IsBuyer(int goodIndex)
+		=> ExpectedMarketValue[goodIndex] < PotentialUtility(goodIndex);
 
-	// Action choices
-	public void DecideAction(MarketSimulator sim, int workGoods, double halfMoneyUtil, double halfLeisureUtil)
+	public bool IsSeller(int goodIndex)
+		=> ExpectedMarketValue[goodIndex] >= Utility(BaseGoodValue[goodIndex], GoodsCount[goodIndex], _halfPersonalAt[goodIndex]);
+
+	public bool CanTrade(int goodIndex, IEnumerable<Actor> all)
+		=> all.Any(o => o.IsSeller(goodIndex)
+					 && o.GoodsCount[goodIndex] > 0
+					 && ExpectedMarketValue[goodIndex] >= o.ExpectedMarketValue[goodIndex]
+					 && Money >= ExpectedMarketValue[goodIndex]);
+
+	// Decide action: produce, consume, or prepare to trade (for each good)
+	public void DecideAction(int workGoodsPerStep, double halfMoneyUtil, double halfLeisureUtil)
 	{
-		// utilities
-		double uTrade = ExpectedMarketValue; // proxy: price signal
-		double uWork  = BaseWorkValue;
-		double uLeisure  = BaseLeisureValue;
+		didProduce = new bool[GoodsCount.Length];
+		didConsume = new int[GoodsCount.Length];
+
+		double uTradeMax = ExpectedMarketValue.Max();             // highest price belief
+		double uWork      = BaseWorkValue;
+		double uLeisure   = BaseLeisureValue;
 		
-		didProduce = false;
-		didConsume = false;
+		// 1) compute current utility of each good
+		double[] uGoods = new double[GoodsCount.Length];
+		for (int i = 0; i < GoodsCount.Length; i++)
+			uGoods[i] = Utility(BaseGoodValue[i], GoodsCount[i], _halfPersonalAt[i]);
+
+		// 2) find the good with the highest utility
+		int bestIdx = 0;
+		double bestUtil = uGoods[0];
+		for (int i = 1; i < uGoods.Length; i++)
+		{
+			if (uGoods[i] > bestUtil)
+			{
+				bestUtil = uGoods[i];
+				bestIdx = i;
+			}
+		}
+		// 3) compare that best‐good utility against trade and leisure
+		if (bestUtil <= uTradeMax && bestUtil >= uLeisure)
+		{
+			// produce one unit of the highest‐utility good
+			GoodsCount[bestIdx] += workGoodsPerStep;
+			didProduce[bestIdx] = true;
+		}
 		
-		// pick max
-		if (uWork <= uTrade && CurrentGoodUtility()>=uLeisure)
+		ApplyBreakage(0.005); // 5% chance per item to break
+	}
+	
+	public void ApplyBreakage(double breakProbability)
+	{
+		for (int i = 0; i < GoodsCount.Length; i++)
 		{
-			// work: gain goods
-			GoodsCount += workGoods;
-			didProduce = true;
+			int broken = 0;
+			for (int j = 0; j < GoodsCount[i]; j++)
+			{
+				if (_rng.Randf() < breakProbability)
+				{
+					broken++;
+				}
+			}
+			GoodsCount[i] -= broken;
+			didConsume[i] += broken;
+			if (GoodsCount[i] < 0) GoodsCount[i] = 0; // Safety check
 		}
-		else if (Hunger >= ExpectedMarketValue && GoodsCount>0)
-		{
-			GoodsCount-=1; // nom nom nom bye bye, good
-			Hunger = 0;
-			didConsume = true;
-		}
-		// trade: join market (nothing extra here)
 	}
 }
-
-
-
-
-
-
-
 
 public static class ListExtensions
 {
@@ -160,196 +191,113 @@ public static class ListExtensions
 		}
 	}
 }
-
+/// <summary>
+/// Simple price-only simulator: tracks mid-market prices, applies drift,
+/// player impact, and cross-commodity influence.
+/// </summary>
 public class MarketSimulator
 {
-	public List<Actor> Actors { get; private set; } = new List<Actor>();
-	private RandomNumberGenerator _rng;
+	private int _numGoods;
+	private float[] MidPrice;
+	private float[] BasePrice;
+	private float[] Stickiness;
+	private float _buyImpact;
+	private float _sellImpact;
+	private float _drift;
+	private float _crossInfluence;
+	private float _spreadFraction;
+	private Random _rng = new Random();
 
-	// Simulation parameters
-	private readonly int _initialMoney;
-	private readonly int _initialGoods;
-	private readonly double _minPersonal, _maxPersonal;
-	private readonly double _minExpected, _maxExpected;
-	private readonly double _halfPersonalValueAt;
-	private readonly int _workGoods;
-	private readonly double _halfMoneyUtility;
-	private readonly double _halfLeisureUtility;
-	private readonly double _hungerRate;
-
-	public MarketSimulator(
-		string cityName,
-		RandomNumberGenerator rng,
-		int numActors,
-		double minPersonal, double maxPersonal,
-		double minExpected, double maxExpected,
-		int initialMoney, int initialGoods,
-		double halfAt,
-		int workGoods,
-		double halfMoneyUtil,
-		double halfLeisureUtil,
-		double hungerRatePerStep)
+	public MarketSimulator(int numGoods, float[] initialPrices, float[] stickiness,
+								float buyImpact, float sellImpact,
+								float drift, float crossInfluence,
+								float spreadFraction)
 	{
-		_rng                    = rng;
-		_initialMoney           = initialMoney;
-		_initialGoods           = initialGoods;
-		_minPersonal            = minPersonal;
-		_maxPersonal            = maxPersonal;
-		_minExpected            = minExpected;
-		_maxExpected            = maxExpected;
-		_halfPersonalValueAt    = halfAt;
-		_workGoods              = workGoods;
-		_halfMoneyUtility       = halfMoneyUtil;
-		_halfLeisureUtility     = halfLeisureUtil;
-		_hungerRate             = hungerRatePerStep;
-
-		SeedAndPopulate(cityName, numActors);
-	}
-
-	private void SeedAndPopulate(string cityName, int numActors)
-	{
-		for (int i = 0; i < numActors; i++)
-		{
-			double basePV = _rng.RandfRange((float)_minPersonal, (float)_maxPersonal);
-			double expV    = _rng.RandfRange((float)_minExpected, (float)_maxExpected);
-			int initGoods  = _rng.RandiRange(0, _initialGoods);
-			int initMoney  = _initialMoney;
-			double workBasePV    = _rng.RandfRange((float)_minPersonal+1.5f, (float)_maxPersonal+1.5f);
-			double leisureBasePV = _rng.RandfRange((float)_minPersonal-1.5f, (float)_maxPersonal-1.5f);
-			Actors.Add(new Actor(basePV, expV, initGoods, initMoney, _halfPersonalValueAt, workBasePV, leisureBasePV, _rng));
-		}
+		_numGoods = numGoods;
+		MidPrice = (float[])initialPrices.Clone();
+		BasePrice = (float[])initialPrices.Clone();
+		Stickiness = (float[])stickiness.Clone();
+		_buyImpact = buyImpact;
+		_sellImpact = sellImpact;
+		_drift = drift;
+		_crossInfluence = crossInfluence;
+		_spreadFraction = spreadFraction;
 	}
 
 	public void StepSimulation()
 	{
-		// 0) Each actor ages hunger and decides action
-		foreach (var actor in Actors)
+		float[] old = (float[])MidPrice.Clone();
+
+		// 1) random drift
+		for (int i = 0; i < _numGoods; i++)
 		{
-			actor.Hunger += _hungerRate;
-			actor.DecideAction(this, _workGoods, _halfMoneyUtility, _halfLeisureUtility);
+			float d = (float)(_rng.NextDouble() * 2 - 1) * _drift;
+			MidPrice[i] += d;
 		}
 
-		// 1) match buyers & sellers
-		var buyers  = Actors.Where(a => a.IsBuyer()).ToList();
-		var sellers = Actors.Where(a => a.IsSeller()).ToList();
+		// 2) cross-commodity bleed
+		for (int i = 0; i < _numGoods; i++)
+			for (int j = 0; j < _numGoods; j++)
+				if (i != j)
+				{
+					float deltaJ = MidPrice[j] - old[j];
+					int sign = _rng.NextDouble() < 0.5 ? -1 : 1;
+					MidPrice[i] += deltaJ * _crossInfluence * sign;
+				}
 
-		buyers.Shuffle(); sellers.Shuffle();
-		int matched = Math.Min(buyers.Count, sellers.Count);
-
-		for (int i = 0; i < matched; i++)
+		// 3) Drift towards baseprice (faster if further out)
+		for (int i = 0; i < _numGoods; i++)
 		{
-			var buyer  = buyers[i];
-			var seller = sellers[i];
-			double price = seller.ExpectedMarketValue;
-
-			if (buyer.Money >= price && seller.GoodsCount > 0 && buyer.ExpectedMarketValue >= price)
-			{
-				buyer.GoodsCount++;
-				buyer.Money     -= (int)price;
-				seller.GoodsCount--;
-				seller.Money     += (int)price;
-				buyer.ExpectedMarketValue  -= buyer.BeliefVolatility;
-				seller.ExpectedMarketValue += seller.BeliefVolatility;
-			}
-			else
-			{
-				buyer.ExpectedMarketValue  += buyer.BeliefVolatility;
-				seller.ExpectedMarketValue -= seller.BeliefVolatility;
-			}
+			float diff = BasePrice[i] - MidPrice[i];
+			MidPrice[i] += diff/ (Stickiness[i]*2);
 		}
-
-		// 2) unmatched belief updates
-		foreach (var b in buyers.Skip(matched))
-			if (b.CanTrade(Actors)) b.ExpectedMarketValue += b.BeliefVolatility;
-		foreach (var s in sellers.Skip(matched))
-			if (s.GoodsCount > 0)  s.ExpectedMarketValue -= s.BeliefVolatility;
-
-		// 3) gossip/rumor
-		RumorStep();
-		// 4) global market signal (median personal utility)
-		GlobalSignalStep();
+		
+		// 4) clamp
+		for (int i = 0; i < _numGoods; i++)
+		{
+			MidPrice[i] = Mathf.Max(MidPrice[i], 0.01f);
+			MidPrice[i] = Mathf.Min(MidPrice[i], BasePrice[i]*2.5f);
+		}
 	}
 
-	private void RumorStep()
+	/// <summary>
+	/// External buy: uses log scaling for diminishing returns on size,
+	/// plus resistance as price deviates.
+	/// </summary>
+	public void ExternalBuy(int goodIndex, float markup, int amount = 1)
 	{
-		foreach (var actor in Actors)
-		{
-			var peer = Actors[_rng.RandiRange(0, Actors.Count - 1)];
-			double rumor = peer.ExpectedMarketValue;
-			actor.ExpectedMarketValue += Math.Sign(rumor - actor.ExpectedMarketValue) * actor.BeliefVolatility;
-		}
+		int i = goodIndex;
+		float deviation = Mathf.Abs(MidPrice[i] - BasePrice[i]) / BasePrice[i];
+		float resistance = 1f / (1f + deviation*Stickiness[i]);
+		float sizeFactor = Mathf.Log(1 + amount * markup);
+		float delta = _buyImpact * sizeFactor * resistance;
+		MidPrice[i] += delta;
+		MidPrice[i] = Mathf.Max(MidPrice[i], 0.01f);
 	}
 
-	private void GlobalSignalStep()
+	/// <summary>
+	/// External sell: mirror of buy with log scaling and resistance.
+	/// </summary>
+	public void ExternalSell(int goodIndex, float markdown, int amount = 1)
 	{
-		var utilities = Actors.Select(a => a.CurrentGoodUtility()).OrderBy(u => u).ToList();
-		int n = utilities.Count;
-		double median = (n%2==1) ? utilities[n/2] : (utilities[n/2-1]+utilities[n/2])/2.0;
-		foreach (var actor in Actors)
-			actor.ExpectedMarketValue += Math.Sign(median - actor.ExpectedMarketValue) * actor.BeliefVolatility;
+		int i = goodIndex;
+		float deviation = Mathf.Abs(MidPrice[i] - BasePrice[i]) / BasePrice[i];
+		float resistance = 1f / (1f + deviation*Stickiness[i]);
+		float sizeFactor = Mathf.Log(1 + amount * markdown);
+		float delta = _sellImpact * sizeFactor * resistance;
+		MidPrice[i] -= delta;
+		MidPrice[i] = Mathf.Max(MidPrice[i], 0.01f);
 	}
-
-	// External market interactions via UI
-	public void ExternalBuy(double markup, int amount)
+	/// <summary>
+	/// Returns the current mid-market prices for graphing/logging
+	/// </summary>
+	public float[] GetPrices()
 	{
-		for (int i = 0; i < amount; i++)
-		{
-			var candidate = Actors
-				.Where(a => a.GoodsCount > 0)
-				.OrderBy(a => a.ExpectedMarketValue)
-				.FirstOrDefault();
-			if (candidate == null) break;
-
-			double basePrice = candidate.ExpectedMarketValue;
-			double price     = basePrice * markup;
-
-			// remove good => increases marginal utility
-			candidate.GoodsCount--;
-			candidate.Money     += (int)price;
-			candidate.ExpectedMarketValue += candidate.BeliefVolatility;
-
-			// immediate rumor + global
-			RumorStep();
-			GlobalSignalStep();
-		}
+		return (float[])MidPrice.Clone();
 	}
 
-	public void ExternalBuy(double markup) => ExternalBuy(markup, 1);
 
-	public void ExternalSell(double markdown, int amount)
-	{
-		for (int i = 0; i < amount; i++)
-		{
-			var candidate = Actors
-				.Where(a => a.Money > 0)
-				.OrderByDescending(a => a.ExpectedMarketValue)
-				.FirstOrDefault();
-			if (candidate == null) break;
-
-			double basePrice = candidate.ExpectedMarketValue;
-			double price     = basePrice * markdown;
-
-			// add good => decreases marginal utility
-			candidate.GoodsCount++;
-			candidate.Money     -= (int)price;
-			candidate.ExpectedMarketValue -= candidate.BeliefVolatility;
-
-			// immediate rumor + global
-			RumorStep();
-			GlobalSignalStep();
-		}
-	}
-
-	public void ExternalSell(double markdown) => ExternalSell(markdown, 1);
-
-	// Stats
-	public int AgentCount => Actors.Count;
-	public double AverageGoodsPerAgent => Actors.Average(a => a.GoodsCount);
-	public int TotalGoods => Actors.Sum(a => a.GoodsCount);
-	public double AverageExpected => Actors.Average(a => a.ExpectedMarketValue);
-	public double AverageMoney => Actors.Average(a => a.Money);
-	public double AverageCurrentUtility => Actors.Average(a => a.CurrentGoodUtility());
-	public double AveragePotentialUtility => Actors.Average(a => a.PotentialGoodUtility());
-	public double Produced => Actors.Count(a => a.didProduce);
-	public double Consumed => Actors.Count(a => a.didConsume);
+	public float GetBuyPrice(int i)    => MidPrice[i] * (1 + _spreadFraction);
+	public float GetSellPrice(int i)   => MidPrice[i] * (1 - _spreadFraction);
 }
+
