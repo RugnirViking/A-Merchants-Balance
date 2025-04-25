@@ -50,7 +50,7 @@ public class CityView : Control
 	
 	public override void _Process(float delta)
 	{
-		if (Engine.GetFramesDrawn() % 6 == 0)
+		if (Engine.GetFramesDrawn() % 60 == 0)
 		{
 			_economy.StepSimulation();
 			_graph.AddValue((float)_economy.AverageExpected);
@@ -62,7 +62,8 @@ public class CityView : Control
 				$"City {Name}: Agents={_economy.AgentCount}, AvgGoods={_economy.AverageGoodsPerAgent:F2}, " +
 				$"TotalGoods={_economy.TotalGoods}, AvgExpected={_economy.AverageExpected:F2}, " +
 				$"AvgCurrUtil={_economy.AverageCurrentUtility:F2}, AvgPotUtil={_economy.AveragePotentialUtility:F2}, " +
-				$"AvgMoney={_economy.AverageMoney:F2}, "
+				$"AvgMoney={_economy.AverageMoney:F2}, Produced={_economy.Produced:F2}, " + 
+				$"Consumed={_economy.Consumed:F2}, " 
 				 
 			);
 		}
@@ -77,12 +78,12 @@ public class CityView : Control
 	
 	private void OnBuyPressed()
 	{
-		_economy.ExternalBuy(BuyMarkup, 10);
+		_economy.ExternalBuy(BuyMarkup, 100);
 	}
 
 	private void OnSellPressed()
 	{
-		_economy.ExternalSell(SellMarkdown, 10);
+		_economy.ExternalSell(SellMarkdown, 100);
 	}
 }
 

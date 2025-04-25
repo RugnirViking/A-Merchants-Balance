@@ -48,7 +48,7 @@ public class Cityscript : Position2D
 				MinPersonal, MaxPersonal,
 				MinExpected, MaxExpected,
 				InitialMoney, InitialGoods,
-				HalfPersonalValueAt
+				HalfPersonalValueAt, 1, HalfMoneyUtility, HalfLeisureUtility, 0.25
 			);
 			GameState.CityEconomies[Name] = _economy;
 		}
@@ -73,39 +73,71 @@ public class Actor
 	public double BaseGoodValue;
 	public double ExpectedMarketValue;
 	public double BeliefVolatility = 0.1;
+	public double BaseWorkValue;
+	public double BaseLeisureValue;
 	public int GoodsCount;
 	public int Money;
-
-	// New:
 	public double Hunger = 0;
-	public int LeisureCount = 0;
-
+	private RandomNumberGenerator _rng;
 	
-	public Actor(
-		double baseGood, double exp,
-		int initGoods, int initMoney,
-		double halfPersonalAt)
+	public bool didProduce = false;
+	public bool didConsume = false;
+
+	private double _halfPersonalAt;
+
+	public Actor(double basePV, double exp, int goods, int money, double halfAt, double baseWorkValue, double baseLeisureValue, RandomNumberGenerator rng)
 	{
-		BaseGoodValue = baseGood;
+		BaseGoodValue = basePV;
 		ExpectedMarketValue = exp;
-		GoodsCount = initGoods;
-		Money = initMoney;
+		GoodsCount = goods;
+		Money = money;
+		_halfPersonalAt = halfAt;
+		BaseWorkValue = baseWorkValue;
+		BaseLeisureValue = baseLeisureValue;
+		_rng = rng;
 	}
 
-	private double Utility(double baseVal, double x, double halfAt)
-		=> baseVal / (Math.Pow(x / halfAt, 3) + 1);
+	// diminishing utility: U(x) = S/( (x/D)^3 +1 )
+	private double Utility(double S, double x, double D)
+		=> S / (Math.Pow(x / D, 3) + 1);
 
-		
-	public double CurrentGoodUtility() => Utility(BaseGoodValue, GoodsCount,3);
-	public double PotentialGoodUtility() => Utility(BaseGoodValue, GoodsCount + 1,3);
-	
-	public bool IsBuyer() => ExpectedMarketValue < PotentialGoodUtility();
+	public double CurrentGoodUtility()   => Utility(BaseGoodValue, GoodsCount, _halfPersonalAt);
+	public double PotentialGoodUtility() => Utility(BaseGoodValue, GoodsCount+1, _halfPersonalAt);
+
+
+	public bool IsBuyer()  => ExpectedMarketValue < PotentialGoodUtility();
 	public bool IsSeller() => ExpectedMarketValue >= CurrentGoodUtility();
 	public bool CanTrade(IEnumerable<Actor> all)
-		=> all.Any(o => o.IsSeller() && o.GoodsCount > 0
-					   && ExpectedMarketValue >= o.ExpectedMarketValue
-					   && Money >= o.ExpectedMarketValue);
+		=> all.Any(o => o.IsSeller() && o.GoodsCount>0 && ExpectedMarketValue>=o.ExpectedMarketValue && Money>=o.ExpectedMarketValue);
+
+	// Action choices
+	public void DecideAction(MarketSimulator sim, int workGoods, double halfMoneyUtil, double halfLeisureUtil)
+	{
+		// utilities
+		double uTrade = ExpectedMarketValue; // proxy: price signal
+		double uWork  = BaseWorkValue;
+		double uLeisure  = BaseLeisureValue;
+		
+		didProduce = false;
+		didConsume = false;
+		
+		// pick max
+		if (uWork <= uTrade && CurrentGoodUtility()>=uLeisure)
+		{
+			// work: gain goods
+			GoodsCount += workGoods;
+			didProduce = true;
+		}
+		else if (Hunger >= ExpectedMarketValue && GoodsCount>0)
+		{
+			GoodsCount-=1; // nom nom nom bye bye, good
+			Hunger = 0;
+			didConsume = true;
+		}
+		// trade: join market (nothing extra here)
+	}
 }
+
 
 
 
@@ -140,6 +172,10 @@ public class MarketSimulator
 	private readonly double _minPersonal, _maxPersonal;
 	private readonly double _minExpected, _maxExpected;
 	private readonly double _halfPersonalValueAt;
+	private readonly int _workGoods;
+	private readonly double _halfMoneyUtility;
+	private readonly double _halfLeisureUtility;
+	private readonly double _hungerRate;
 
 	public MarketSimulator(
 		string cityName,
@@ -148,7 +184,11 @@ public class MarketSimulator
 		double minPersonal, double maxPersonal,
 		double minExpected, double maxExpected,
 		int initialMoney, int initialGoods,
-		double halfAt)
+		double halfAt,
+		int workGoods,
+		double halfMoneyUtil,
+		double halfLeisureUtil,
+		double hungerRatePerStep)
 	{
 		_rng                    = rng;
 		_initialMoney           = initialMoney;
@@ -158,6 +198,10 @@ public class MarketSimulator
 		_minExpected            = minExpected;
 		_maxExpected            = maxExpected;
 		_halfPersonalValueAt    = halfAt;
+		_workGoods              = workGoods;
+		_halfMoneyUtility       = halfMoneyUtil;
+		_halfLeisureUtility     = halfLeisureUtil;
+		_hungerRate             = hungerRatePerStep;
 
 		SeedAndPopulate(cityName, numActors);
 	}
@@ -170,12 +214,21 @@ public class MarketSimulator
 			double expV    = _rng.RandfRange((float)_minExpected, (float)_maxExpected);
 			int initGoods  = _rng.RandiRange(0, _initialGoods);
 			int initMoney  = _initialMoney;
-			Actors.Add(new Actor(basePV, expV, initGoods, initMoney, _halfPersonalValueAt));
+			double workBasePV    = _rng.RandfRange((float)_minPersonal+1.5f, (float)_maxPersonal+1.5f);
+			double leisureBasePV = _rng.RandfRange((float)_minPersonal-1.5f, (float)_maxPersonal-1.5f);
+			Actors.Add(new Actor(basePV, expV, initGoods, initMoney, _halfPersonalValueAt, workBasePV, leisureBasePV, _rng));
 		}
 	}
 
 	public void StepSimulation()
 	{
+		// 0) Each actor ages hunger and decides action
+		foreach (var actor in Actors)
+		{
+			actor.Hunger += _hungerRate;
+			actor.DecideAction(this, _workGoods, _halfMoneyUtility, _halfLeisureUtility);
+		}
+
 		// 1) match buyers & sellers
 		var buyers  = Actors.Where(a => a.IsBuyer()).ToList();
 		var sellers = Actors.Where(a => a.IsSeller()).ToList();
@@ -191,7 +244,6 @@ public class MarketSimulator
 
 			if (buyer.Money >= price && seller.GoodsCount > 0 && buyer.ExpectedMarketValue >= price)
 			{
-				// execute trade
 				buyer.GoodsCount++;
 				buyer.Money     -= (int)price;
 				seller.GoodsCount--;
@@ -201,7 +253,6 @@ public class MarketSimulator
 			}
 			else
 			{
-				// failed transaction
 				buyer.ExpectedMarketValue  += buyer.BeliefVolatility;
 				seller.ExpectedMarketValue -= seller.BeliefVolatility;
 			}
@@ -209,11 +260,9 @@ public class MarketSimulator
 
 		// 2) unmatched belief updates
 		foreach (var b in buyers.Skip(matched))
-			if (b.CanTrade(Actors))
-				b.ExpectedMarketValue += b.BeliefVolatility;
+			if (b.CanTrade(Actors)) b.ExpectedMarketValue += b.BeliefVolatility;
 		foreach (var s in sellers.Skip(matched))
-			if (s.GoodsCount > 0)
-				s.ExpectedMarketValue -= s.BeliefVolatility;
+			if (s.GoodsCount > 0)  s.ExpectedMarketValue -= s.BeliefVolatility;
 
 		// 3) gossip/rumor
 		RumorStep();
@@ -221,38 +270,23 @@ public class MarketSimulator
 		GlobalSignalStep();
 	}
 
-	// Rumor step: actors hear from a random peer
 	private void RumorStep()
 	{
 		foreach (var actor in Actors)
 		{
-			int idx = _rng.RandiRange(0, Actors.Count - 1);
-			var peer = Actors[idx];
-			double rumorPrice = peer.ExpectedMarketValue;
-			if (rumorPrice > actor.ExpectedMarketValue)
-				actor.ExpectedMarketValue += actor.BeliefVolatility;
-			else if (rumorPrice < actor.ExpectedMarketValue)
-				actor.ExpectedMarketValue -= actor.BeliefVolatility;
+			var peer = Actors[_rng.RandiRange(0, Actors.Count - 1)];
+			double rumor = peer.ExpectedMarketValue;
+			actor.ExpectedMarketValue += Math.Sign(rumor - actor.ExpectedMarketValue) * actor.BeliefVolatility;
 		}
 	}
 
-	// Global signal: nudge toward median personal utility
 	private void GlobalSignalStep()
 	{
-		// median of current utilities
 		var utilities = Actors.Select(a => a.CurrentGoodUtility()).OrderBy(u => u).ToList();
-		double median;
 		int n = utilities.Count;
-		if (n % 2 == 1) median = utilities[n/2];
-		else median = (utilities[n/2 - 1] + utilities[n/2]) / 2.0;
-
+		double median = (n%2==1) ? utilities[n/2] : (utilities[n/2-1]+utilities[n/2])/2.0;
 		foreach (var actor in Actors)
-		{
-			if (median > actor.ExpectedMarketValue)
-				actor.ExpectedMarketValue += actor.BeliefVolatility;
-			else if (median < actor.ExpectedMarketValue)
-				actor.ExpectedMarketValue -= actor.BeliefVolatility;
-		}
+			actor.ExpectedMarketValue += Math.Sign(median - actor.ExpectedMarketValue) * actor.BeliefVolatility;
 	}
 
 	// External market interactions via UI
@@ -316,4 +350,6 @@ public class MarketSimulator
 	public double AverageMoney => Actors.Average(a => a.Money);
 	public double AverageCurrentUtility => Actors.Average(a => a.CurrentGoodUtility());
 	public double AveragePotentialUtility => Actors.Average(a => a.PotentialGoodUtility());
+	public double Produced => Actors.Count(a => a.didProduce);
+	public double Consumed => Actors.Count(a => a.didConsume);
 }
