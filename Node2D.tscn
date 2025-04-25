@@ -375,7 +375,7 @@ margin_bottom = 59.0
 text = "||"
 script = ExtResource( 22 )
 
-[node name="miniMap" type="Control" parent="UILayer"]
+[node name="Minimap" type="Control" parent="UILayer"]
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -385,23 +385,23 @@ margin_top = -156.0
 mouse_filter = 1
 script = ExtResource( 21 )
 
-[node name="ColorRect2" type="ColorRect" parent="UILayer/miniMap"]
+[node name="ColorRect2" type="ColorRect" parent="UILayer/Minimap"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color( 0.752941, 0.737255, 0.678431, 1 )
 
-[node name="ColorRect" type="ColorRect" parent="UILayer/miniMap"]
+[node name="ColorRect" type="ColorRect" parent="UILayer/Minimap"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 5.0
 margin_top = 5.0
 color = Color( 0.819608, 0.807843, 0.764706, 1 )
 
-[node name="CitiesContainer" type="Control" parent="UILayer/miniMap"]
+[node name="CitiesContainer" type="Control" parent="UILayer/Minimap"]
 margin_right = 40.0
 margin_bottom = 40.0
 
-[node name="PlayerDot" type="ColorRect" parent="UILayer/miniMap"]
+[node name="PlayerDot" type="ColorRect" parent="UILayer/Minimap"]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -415,9 +415,12 @@ color = Color( 0.156863, 0.717647, 0.909804, 1 )
 [node name="pauseMenuBackground" type="Control" parent="UILayer"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
+__meta__ = {
+"_editor_description_": "add shader to slightly but noticeable grey out the backgrounds"
+}
 
 [node name="pauseMenu" type="PopupMenu" parent="UILayer/pauseMenuBackground"]
-visible = true
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -440,13 +443,13 @@ margin_bottom = -10.0
 
 [node name="gameVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
 margin_right = 280.0
-margin_bottom = 42.0
+margin_bottom = 32.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="gameVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer"]
 margin_right = 92.0
-margin_bottom = 42.0
+margin_bottom = 32.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
@@ -465,15 +468,15 @@ tick_count = 10
 ticks_on_borders = true
 
 [node name="soundEffectsVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
-margin_top = 46.0
+margin_top = 36.0
 margin_right = 280.0
-margin_bottom = 88.0
+margin_bottom = 69.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="soundEffectsVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/soundEffectsVolumeHBoxContainer"]
 margin_right = 92.0
-margin_bottom = 42.0
+margin_bottom = 33.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
@@ -492,15 +495,15 @@ tick_count = 10
 ticks_on_borders = true
 
 [node name="ambientVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
-margin_top = 92.0
+margin_top = 73.0
 margin_right = 280.0
-margin_bottom = 134.0
+margin_bottom = 106.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="ambientVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/ambientVolumeHBoxContainer"]
 margin_right = 92.0
-margin_bottom = 42.0
+margin_bottom = 33.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
@@ -519,15 +522,15 @@ tick_count = 10
 ticks_on_borders = true
 
 [node name="musicVolumeHBoxContainer" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
-margin_top = 138.0
+margin_top = 110.0
 margin_right = 280.0
-margin_bottom = 180.0
+margin_bottom = 143.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="musicVolume" type="Label" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/musicVolumeHBoxContainer"]
 margin_right = 92.0
-margin_bottom = 42.0
+margin_bottom = 33.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
@@ -545,5 +548,38 @@ rounded = true
 tick_count = 10
 ticks_on_borders = true
 
+[node name="gameVolumeHBoxContainer2" type="HBoxContainer" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer"]
+margin_top = 147.0
+margin_right = 280.0
+margin_bottom = 180.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="quitButton" type="Button" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer2"]
+margin_right = 98.0
+margin_bottom = 33.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Quit to menu"
+
+[node name="saveLoadButton" type="Button" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer2"]
+margin_left = 102.0
+margin_right = 189.0
+margin_bottom = 33.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Save/load"
+
+[node name="resumeButton" type="Button" parent="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer2"]
+margin_left = 193.0
+margin_right = 280.0
+margin_bottom = 33.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+text = "Resume"
+
 [connection signal="pressed" from="UILayer/pauseButton" to="UILayer/pauseButton" method="_on_Button_pressed"]
-[connection signal="mouse_exited" from="UILayer/miniMap/ColorRect2" to="." method="_on_ColorRect2_mouse_exited"]
+[connection signal="mouse_exited" from="UILayer/Minimap/ColorRect2" to="." method="_on_ColorRect2_mouse_exited"]
