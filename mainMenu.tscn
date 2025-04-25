@@ -213,3 +213,4 @@ margin_bottom = 600.0
 size_flags_horizontal = 3
 
 [connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/New game" to="." method="_on_New_game_pressed"]
+[connection signal="popup_hide" from="TutorialPopup/VBoxContainer/Tutorial" to="." method="_on_Tutorial_popup_hide"]

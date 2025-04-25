@@ -22,5 +22,14 @@ public class mainMenu : Control
 		_tutorialContainer.Show(); 
 		_tutorialPopup.PopupCentered();
 	}
+	
+	private void _on_Tutorial_popup_hide()
+	{
+		_tutorialContainer.Hide(); 
+		_tutorialPopup.PopupCentered();
+	}
 }
+
+
+
 
