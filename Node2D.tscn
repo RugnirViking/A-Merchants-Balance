@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=2]
+[gd_scene load_steps=33 format=2]
 
 [ext_resource path="res://assets/player.png" type="Texture" id=1]
 [ext_resource path="res://assets/background.png" type="Texture" id=2]
@@ -20,6 +20,8 @@
 [ext_resource path="res://assets/banner5.png" type="Texture" id=18]
 [ext_resource path="res://assets/banner7.png" type="Texture" id=19]
 [ext_resource path="res://assets/banner8.png" type="Texture" id=20]
+[ext_resource path="res://Minimap.cs" type="Script" id=21]
+[ext_resource path="res://PauseButton.cs" type="Script" id=22]
 
 [sub_resource type="Shader" id=1]
 code = "shader_type canvas_item;
@@ -172,7 +174,7 @@ font_data = ExtResource( 4 )
 script = ExtResource( 3 )
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="."]
-layer = -2
+layer = -3
 
 [node name="Background" type="TextureRect" parent="BackgroundLayer"]
 material = SubResource( 2 )
@@ -180,6 +182,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource( 2 )
 expand = true
 stretch_mode = 2
@@ -223,6 +226,7 @@ anchor_bottom = 1.0
 margin_left = 20.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 custom_styles/panel = SubResource( 9 )
 
 [node name="TextForLabel" type="Label" parent="CityLabels/LabelPrototype/LabelPrototype2"]
@@ -263,6 +267,7 @@ anchor_bottom = 1.0
 margin_left = 20.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 custom_styles/panel = SubResource( 9 )
 
 [node name="Label" type="Label" parent="CityPrompt/LabelPrototype2"]
@@ -281,7 +286,7 @@ valign = 1
 uppercase = true
 
 [node name="CitiesLayer" type="CanvasLayer" parent="."]
-layer = -1
+layer = -2
 
 [node name="Libreville" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 121, -129 )
@@ -349,6 +354,7 @@ bannerTex = ExtResource( 15 )
 material = SubResource( 5 )
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 script = ExtResource( 6 )
 
 [node name="Player" type="Sprite" parent="."]
@@ -363,16 +369,11 @@ layer = 2
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -1.0
+mouse_filter = 2
 
 [node name="Panel" type="Panel" parent="UILayer/Control"]
 margin_right = 298.0
 margin_bottom = 63.0
-
-[node name="TextureProgress" type="TextureProgress" parent="UILayer/Control/Panel"]
-margin_left = 11.0
-margin_top = 30.0
-margin_right = 285.0
-margin_bottom = 51.0
 
 [node name="RichTextLabel" type="RichTextLabel" parent="UILayer/Control/Panel"]
 margin_left = 8.0
@@ -390,6 +391,7 @@ margin_top = 11.0
 margin_right = -13.0
 margin_bottom = 59.0
 text = "||"
+script = ExtResource( 22 )
 
 [node name="Minimap" type="Control" parent="UILayer"]
 anchor_left = 1.0
@@ -398,6 +400,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -156.0
 margin_top = -156.0
+mouse_filter = 1
+script = ExtResource( 21 )
 
 [node name="ColorRect2" type="ColorRect" parent="UILayer/Minimap"]
 anchor_right = 1.0
@@ -410,3 +414,21 @@ anchor_bottom = 1.0
 margin_left = 5.0
 margin_top = 5.0
 color = Color( 0.819608, 0.807843, 0.764706, 1 )
+
+[node name="CitiesContainer" type="Control" parent="UILayer/Minimap"]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="PlayerDot" type="ColorRect" parent="UILayer/Minimap"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -2.5
+margin_top = -2.5
+margin_right = 2.5
+margin_bottom = 2.5
+color = Color( 0.156863, 0.717647, 0.909804, 1 )
+
+[connection signal="pressed" from="UILayer/Button" to="UILayer/Button" method="_on_Button_pressed"]
+[connection signal="mouse_exited" from="UILayer/Minimap/ColorRect2" to="." method="_on_ColorRect2_mouse_exited"]

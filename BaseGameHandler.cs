@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+
 public static class GameState
 {
 	public static string CurrentCity;
@@ -9,6 +10,9 @@ public static class GameState
 	public static bool isFirstLoad = true;
 	public static ulong firstLoadSeed = 0;
 	public static Vector2 worldPos;
+	
+	public static Dictionary<string, List<Actor>> CityActors 
+		= new Dictionary<string, List<Actor>>();
 }
 
 public class BaseGameHandler : Node2D
@@ -26,6 +30,7 @@ public class BaseGameHandler : Node2D
 	private ColorRect      _glassEffect;
 	private ShaderMaterial _glassMaterial;
 	private Node2D         _labelContainer;
+	private Minimap        _minimap;
 
 	// World offset & target in “virtual” world coords
 	private Vector2 _worldPos  = Vector2.Zero;
@@ -261,7 +266,7 @@ public class BaseGameHandler : Node2D
 
 		const int cols = 9;
 		const int rows = 2;
-		const float extent = 3000f;
+		const float extent = 4000f;
 
 		_scatter.Multimesh = _multiMesh;
 
@@ -332,7 +337,7 @@ public class BaseGameHandler : Node2D
 			GameState.isFirstLoad = false;
 			GameState.firstLoadSeed = rng.Seed;
 		} else{
-			rng.SetSeed(GameState.firstLoadSeed);
+			rng.Seed = GameState.firstLoadSeed;
 			_worldPos = GameState.worldPos;
 			_targetPos = _worldPos;
 		}
@@ -343,6 +348,39 @@ public class BaseGameHandler : Node2D
 		InitScatter(rng);
 		// update shader scroll in ready 
 		UpdateShaderScroll();
+		
+		InitMinimap();
+	}
+	private void InitMinimap()
+	{
+		_minimap = GetNode<Control>("UILayer/Minimap") as Minimap;
+		var container = _minimap.GetNode("CitiesContainer");
+		_minimap._baseGameHandler = this;
+
+		foreach (var city in _cities)
+		{
+			var dot = new ColorRect();
+			dot.Color = new Color(1, 0, 0); // red dot
+			dot.RectSize = new Vector2(6, 6);
+			dot.RectPivotOffset = dot.RectSize / 2;
+
+			Vector2 worldPos = (Vector2)city.GetMeta("world_pos");
+			Vector2 mapSize = _minimap.RectSize;
+			worldPos = worldPos - new Vector2(80,80);
+			dot.RectPosition = NormalizeToMinimap(worldPos, mapSize);
+
+			container.AddChild(dot);
+		}
+	}
+	private void UpdateMinimap()
+	{
+		var minimap = GetNode<Control>("UILayer/Minimap");
+		var playerDot = minimap.GetNode<Control>("PlayerDot");
+
+		Vector2 minimapSize = minimap.RectSize;
+		Vector2 screenCenter = GetViewport().Size * 0.5f;
+		Vector2 normalized = NormalizeToMinimap(_worldPos + screenCenter, minimapSize);
+		playerDot.RectPosition = normalized - playerDot.RectSize * 0.5f;
 	}
 	
 	private void UpdateShaderScroll()
@@ -368,8 +406,49 @@ public class BaseGameHandler : Node2D
 		Vector2 size = GetViewport().Size;
 		_player.Position = size * 0.5f;
 	}
+	
+	public void SetWorldTarget(Vector2 pos)
+	{
+		
+		_targetPos = pos;
+	}
+	
+	private string GetKeyNameAttackedToAction(string actionName)
+	{
+		var events = InputMap.GetActionList(actionName);
 
-	public override void _Input(InputEvent @event)
+		foreach (InputEvent ev in events)
+		{
+
+			if (ev is InputEventKey keyEvent)
+			{
+				string keyName = OS.GetScancodeString(keyEvent.PhysicalScancode);
+				return keyName;
+			}
+		}
+
+		return "[Unbound]";
+	}
+	
+	public Vector2 MinimapClickToWorld(Vector2 minimapClick)
+	{
+		
+		Vector2 minimapSize = _minimap.RectSize;
+		Vector2 worldMin = new Vector2(-2000, -2000);
+		Vector2 worldMax = new Vector2(2000, 2000);
+		Vector2 worldSize = worldMax - worldMin;
+
+		// Get local position inside the minimap
+		Vector2 localClick = minimapClick - _minimap.GetGlobalRect().Position;
+		Vector2 percent = localClick / minimapSize;
+
+		// Map to world space (adjusted for screen center)
+		
+		Vector2 screenCenter = GetViewport().Size * 0.5f;
+		return worldMin + percent * worldSize - screenCenter;
+	}
+
+	public override void _UnhandledInput(InputEvent @event)
 	{
 		if (@event is InputEventMouseButton mb && mb.ButtonIndex == (int)ButtonList.Left)
 		{
@@ -392,7 +471,7 @@ public class BaseGameHandler : Node2D
 		{
 			UpdateTarget(mm.Position);
 		}
-		else if(@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Scancode == (int)KeyList.Space)
+		else if(@event.IsActionPressed("enterCity"))
 		{
 			if (_isNearCity && _closestCity != null)
 			{
@@ -403,8 +482,8 @@ public class BaseGameHandler : Node2D
 	
 	Vector2 NormalizeToMinimap(Vector2 worldPos, Vector2 minimapSize)
 	{
-		Vector2 worldMin = new Vector2(-3000, -3000);
-		Vector2 worldMax = new Vector2(3000, 3000);
+		Vector2 worldMin = new Vector2(-2000, -2000);
+		Vector2 worldMax = new Vector2(2000, 2000);
 		Vector2 worldSize = worldMax - worldMin;
 
 		Vector2 normalized = (worldPos - worldMin) / worldSize;
@@ -508,6 +587,7 @@ public class BaseGameHandler : Node2D
 		{
 			HideCityPrompt();
 		}
+		UpdateMinimap();
 
 	}
 	
@@ -518,6 +598,9 @@ public class BaseGameHandler : Node2D
 		GameState.CurrentCity = city.Name;
 		GameState.CityBanner = city.bannerTex;
 		GameState.worldPos = (Vector2)city.GetMeta("world_pos") - screenCenter;
+		foreach (Cityscript _city in _cities){
+			GameState.CityActors[_city.Name] = _city._actors; // we add them all so we can reconstruct later
+		}
 		
 		
 		var cityView = (PackedScene)GD.Load("res://CityView.tscn");
@@ -528,7 +611,8 @@ public class BaseGameHandler : Node2D
 	{
 		var prompt = GetNode<NinePatchRect>("CityPrompt");
 		var label = prompt.GetNode<Label>("LabelPrototype2/Label");
-		label.Text = $"Press space to enter {city.Name}";
+		var keyname = GetKeyNameAttackedToAction("enterCity");
+		label.Text = $"Press {keyname} to enter {city.Name}";
 		prompt.Visible = true;
 
 		Vector2 cityScreenPos = (city.GlobalPosition - _worldPos);
@@ -540,4 +624,11 @@ public class BaseGameHandler : Node2D
 	{
 		GetNode<NinePatchRect>("CityPrompt").Visible = false;
 	}
+	
+	private void _on_ColorRect2_mouse_exited()
+	{
+			GD.Print("Clicked!");
+	}
 }
+
+
