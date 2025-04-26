@@ -131,6 +131,8 @@ public static class GameState
 	public static ulong firstLoadSeed = 0;
 	public static Vector2 worldPos;
 	
+	public static List<Quest> activeQuests = new List<Quest>();
+	
 	public static Dictionary<string, MarketSimulator> CityEconomies 
 		= new Dictionary<string, MarketSimulator>();
 		
@@ -206,6 +208,12 @@ public static class GameState
 			econDict[kv.Key] = kv.Value.ToDictionary();
 		data["CityEconomies"] = econDict;
 
+		// --- **NEW**: serialize activeQuests ---
+		var questArray = new Godot.Collections.Array();
+		foreach (var quest in activeQuests)
+			questArray.Add(quest.ToDictionary());
+		data["activeQuests"] = questArray;
+		
 		// turn into JSON text
 		string json = JSON.Print(data);
 		SaveManager.Save(CurrentSaveGameKey, json);
@@ -315,6 +323,18 @@ public static class GameState
 			}
 		}
 
+		// --- **NEW**: deserialize activeQuests ---
+		activeQuests.Clear();
+		if (data.Contains("activeQuests"))
+		{
+			var arr = data["activeQuests"] as Godot.Collections.Array;
+			foreach (Godot.Collections.Dictionary qdict in arr)
+			{
+				var quest = Quest.FromDictionary(qdict);
+				activeQuests.Add(quest);
+			}
+		}
+		
 		GD.Print("GameState loaded.");
 	}
 }
@@ -325,6 +345,7 @@ public class BaseGameHandler : Node2D
 	[Export]
 	public float MoveSpeed = 200f;
 	[Export] private PackedScene TradeGoodEntryScene;
+	[Export] private PackedScene QuestContainerScene;
 
 		  
 	private TextureRect       _background;
@@ -346,6 +367,7 @@ public class BaseGameHandler : Node2D
 	private Panel             _autosavePanel;
 	private SaveLoadDialog    _saveLoadDialog;
 	private Control    		  _inventoryScreen;
+	private VBoxContainer      _trackedQuestsContainer;
 
 	// World offset & target in “virtual” world coords
 	private Vector2 _worldPos  = Vector2.Zero;
@@ -648,6 +670,7 @@ public class BaseGameHandler : Node2D
 		_autosavePanel  = FindNode("AutosavePanel", true, false) as Panel;
 		_saveLoadDialog = FindNode("SaveLoadDialog", true, false) as SaveLoadDialog;
 		_inventoryScreen= FindNode("InventoryScreen", true, false) as Control;
+		_trackedQuestsContainer  = FindNode("TrackedQuests",   true, false)    as VBoxContainer;
 		
 		
 		_saveLoadDialog.Connect("popup_hide",    this, nameof(OnSaveLoadClosed));
@@ -690,6 +713,7 @@ public class BaseGameHandler : Node2D
 		
 		InitMinimap();
 		InitInventory();
+		RepopulateTrackedQuests();
 		
 		(FindNode("gameVolumeSlider",true,false) as HSlider        ).Value = 100 * GameState.masterVolume;
 		(FindNode("soundEffectsVolumeSlider",true,false) as HSlider).Value = 100 * GameState.sfxVolume;
@@ -697,6 +721,34 @@ public class BaseGameHandler : Node2D
 		(FindNode("musicVolumeSlider",true,false) as HSlider       ).Value = 100 * GameState.musicVolume;
 		
 		
+	}
+	
+	public void RepopulateTrackedQuests()
+	{
+		foreach (Node child in _trackedQuestsContainer.GetChildren())
+		{
+			child.QueueFree();
+		}
+		
+		foreach (Quest quest in GameState.activeQuests)
+		{
+			SpawnQuestUI(quest,true,_trackedQuestsContainer);
+		}
+	}
+	
+	public QuestContainer SpawnQuestUI(Quest quest, bool isTracked, VBoxContainer container)
+	{
+		var qc = (QuestContainer)QuestContainerScene.Instance();
+		// populate it
+		qc.showAcceptButton    = !isTracked;
+		qc.quest               = quest;
+		qc.QuestName           = quest._questName;
+		qc.QuestText           = quest._questText;
+		qc.QuestMission        = quest._questMission;
+		qc.QuestReward         = quest._questReward;
+		// add to the scene
+		container.AddChild(qc);
+		return qc;
 	}
 	
 	private void UpdateGold(int newGold)

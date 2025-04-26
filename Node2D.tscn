@@ -1,4 +1,4 @@
-[gd_scene load_steps=51 format=2]
+[gd_scene load_steps=53 format=2]
 
 [ext_resource path="res://assets/player.png" type="Texture" id=1]
 [ext_resource path="res://assets/background.png" type="Texture" id=2]
@@ -30,6 +30,7 @@
 [ext_resource path="res://barlowFontSize12.tres" type="DynamicFont" id=28]
 [ext_resource path="res://barlowFontSize10.tres" type="DynamicFont" id=29]
 [ext_resource path="res://TradeGoodEntry.tscn" type="PackedScene" id=30]
+[ext_resource path="res://QuestContainer.tscn" type="PackedScene" id=31]
 
 [sub_resource type="Shader" id=1]
 code = "shader_type canvas_item;
@@ -318,12 +319,16 @@ bg_color = Color( 0.701961, 0.682353, 0.6, 1 )
 [sub_resource type="StyleBoxFlat" id=14]
 bg_color = Color( 0.335938, 0.294317, 0.224396, 1 )
 
+[sub_resource type="StyleBoxFlat" id=22]
+bg_color = Color( 0.701961, 0.682353, 0.6, 1 )
+
 [sub_resource type="StyleBoxFlat" id=15]
 bg_color = Color( 0.701961, 0.682353, 0.6, 1 )
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 3 )
 TradeGoodEntryScene = ExtResource( 30 )
+QuestContainerScene = ExtResource( 31 )
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="."]
 layer = -3
@@ -1023,7 +1028,14 @@ __meta__ = {
 "_edit_use_anchors_": true
 }
 
+[node name="questListBackground2" type="Panel" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 50.0
+custom_styles/panel = SubResource( 22 )
+
 [node name="questItemList" type="ItemList" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground"]
+visible = false
 anchor_top = 0.0791925
 anchor_right = 1.0
 anchor_bottom = 0.978261
@@ -1115,8 +1127,8 @@ __meta__ = {
 "_edit_use_anchors_": true
 }
 
-[node name="exampleQuestDestination" type="Label" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground/questItemList/VBoxContainer/questHBoxContainer"]
-margin_right = 151.0
+[node name="questTargetCity" type="Label" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground/questItemList/VBoxContainer/questHBoxContainer"]
+margin_right = 113.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -1125,8 +1137,20 @@ text = "Buggerton"
 align = 1
 valign = 1
 
+[node name="questAmount" type="Label" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground/questItemList/VBoxContainer/questHBoxContainer"]
+margin_left = 117.0
+margin_right = 231.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_fonts/font = ExtResource( 22 )
+text = "0/16"
+align = 1
+valign = 1
+
 [node name="exampleQuestTimeLeft" type="Label" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground/questItemList/VBoxContainer/questHBoxContainer"]
-margin_left = 155.0
+visible = false
+margin_left = 184.0
 margin_right = 231.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
@@ -1148,6 +1172,16 @@ valign = 1
 __meta__ = {
 "_edit_use_anchors_": true
 }
+
+[node name="TrackedQuests" type="VBoxContainer" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 50.0
+
+[node name="QuestContainer" parent="UILayer/InventoryScreen/inventoryScreenBackground/questListBackground/TrackedQuests" instance=ExtResource( 31 )]
+margin_top = 0.0
+margin_right = 231.0
+margin_bottom = 102.0
 
 [node name="timeControlBackground" type="Panel" parent="UILayer/InventoryScreen/inventoryScreenBackground"]
 anchor_left = 1.0

@@ -4,14 +4,14 @@
 [ext_resource path="res://assets/banner1.png" type="Texture" id=2]
 [ext_resource path="res://CityView.cs" type="Script" id=3]
 [ext_resource path="res://barlowFontSize16.tres" type="DynamicFont" id=4]
-[ext_resource path="res://assets/questbuttonclosed.png" type="Texture" id=5]
-[ext_resource path="res://assets/questbutton.png" type="Texture" id=6]
+[ext_resource path="res://sfx/QuestComplete.mp3" type="AudioStream" id=5]
 [ext_resource path="res://assets/ninepatchbutton.png" type="Texture" id=7]
 [ext_resource path="res://assets/castleview.png" type="Texture" id=8]
 [ext_resource path="res://GraphControl.cs" type="Script" id=9]
 [ext_resource path="res://barlowFontSize36.tres" type="DynamicFont" id=10]
 [ext_resource path="res://sfx/GamejamBuy.mp3" type="AudioStream" id=11]
 [ext_resource path="res://sfx/GamejamSell.mp3" type="AudioStream" id=12]
+[ext_resource path="res://QuestContainer.tscn" type="PackedScene" id=14]
 
 [sub_resource type="StyleBoxFlat" id=4]
 bg_color = Color( 0.870588, 0.780392, 0.607843, 1 )
@@ -40,6 +40,7 @@ script = ExtResource( 3 )
 LabelFont = ExtResource( 4 )
 LabelColor = Color( 0.454902, 0.364706, 0.196078, 1 )
 normalColor = Color( 0.290196, 0.235294, 0.184314, 1 )
+QuestContainerScene = ExtResource( 14 )
 
 [node name="Panel" type="VBoxContainer" parent="."]
 anchor_right = 1.0
@@ -94,9 +95,33 @@ anchor_right = 0.5
 anchor_bottom = 1.0
 margin_left = -102.0
 margin_right = 112.0
+rect_pivot_offset = Vector2( -302.5, 67 )
 custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
 custom_fonts/font = ExtResource( 10 )
 text = "GOLD: 10000"
+align = 1
+valign = 1
+autowrap = true
+
+[node name="ReferenceRect3" type="Control" parent="Panel/TopPanel/HBoxContainer"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -310.0
+margin_right = -49.0
+rect_min_size = Vector2( 100, 0 )
+size_flags_horizontal = 3
+
+[node name="WeightLabel" type="Label" parent="Panel/TopPanel/HBoxContainer/ReferenceRect3"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -142.5
+margin_right = 112.5
+rect_pivot_offset = Vector2( -302.5, 67 )
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 10 )
+text = "WEIGHT: 0/100"
 align = 1
 valign = 1
 autowrap = true
@@ -162,138 +187,47 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 alignment = 1
 
-[node name="Label" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 112.0
+[node name="Label2" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
 margin_right = 532.0
-margin_bottom = 146.0
+margin_bottom = 34.0
 custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
 custom_fonts/font = SubResource( 3 )
-text = "QUESTS"
+text = "TRACKED"
 align = 1
 valign = 2
 
-[node name="QuestContainer" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 150.0
+[node name="TrackedQuests" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
+margin_top = 38.0
 margin_right = 532.0
-margin_bottom = 170.0
-
-[node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer"]
-margin_right = 20.0
-margin_bottom = 20.0
+margin_bottom = 163.0
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
+size_flags_vertical = 3
 
-[node name="Label2" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer"]
-margin_left = 24.0
-margin_right = 424.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
+[node name="QuestContainer2" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/TrackedQuests" instance=ExtResource( 14 )]
+visible = false
+margin_top = 0.0
+margin_bottom = 79.0
+
+[node name="Label" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
+margin_top = 167.0
+margin_right = 532.0
+margin_bottom = 201.0
 custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
-custom_fonts/font = ExtResource( 4 )
-text = "QUEST 1: Something really bad happened, please help"
+custom_fonts/font = SubResource( 3 )
+text = "AVAILABLE QUESTS"
 align = 1
 valign = 2
-autowrap = true
 
-[node name="Button" type="TextureButton" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer"]
-margin_left = 428.0
-margin_right = 508.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.2
-texture_normal = ExtResource( 5 )
-texture_pressed = ExtResource( 6 )
-expand = true
-stretch_mode = 3
-
-[node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer"]
-margin_left = 512.0
+[node name="AvailableQuests" type="VBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
+margin_top = 205.0
 margin_right = 532.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
+margin_bottom = 331.0
+size_flags_vertical = 3
 
-[node name="QuestContainer2" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 174.0
-margin_right = 532.0
-margin_bottom = 194.0
-
-[node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer2"]
-margin_right = 20.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
-
-[node name="Label2" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer2"]
-margin_left = 24.0
-margin_right = 424.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
-custom_fonts/font = ExtResource( 4 )
-text = "QUEST 1: Something really bad happened, please help"
-align = 1
-valign = 2
-autowrap = true
-
-[node name="Button" type="TextureButton" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer2"]
-margin_left = 428.0
-margin_right = 508.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.2
-texture_normal = ExtResource( 5 )
-texture_pressed = ExtResource( 6 )
-expand = true
-stretch_mode = 3
-
-[node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer2"]
-margin_left = 512.0
-margin_right = 532.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
-
-[node name="QuestContainer3" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer"]
-margin_top = 198.0
-margin_right = 532.0
-margin_bottom = 218.0
-
-[node name="Control2" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer3"]
-margin_right = 20.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
-
-[node name="Label2" type="Label" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer3"]
-margin_left = 24.0
-margin_right = 424.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
-custom_fonts/font = ExtResource( 4 )
-text = "QUEST 1: Something really bad happened, please help"
-align = 1
-valign = 2
-autowrap = true
-
-[node name="Button" type="TextureButton" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer3"]
-margin_left = 428.0
-margin_right = 508.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.2
-texture_normal = ExtResource( 5 )
-texture_pressed = ExtResource( 6 )
-expand = true
-stretch_mode = 3
-
-[node name="Control" type="Control" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/QuestContainer3"]
-margin_left = 512.0
-margin_right = 532.0
-margin_bottom = 20.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.05
+[node name="QuestContainer2" parent="Panel/MainPanel/VBoxContainer/HBoxContainer/NinePatchRect/VBoxContainer/AvailableQuests" instance=ExtResource( 14 )]
+visible = false
+margin_top = 0.0
+margin_bottom = 79.0
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Panel/MainPanel/VBoxContainer"]
 margin_top = 335.0
@@ -520,5 +454,8 @@ stream = ExtResource( 11 )
 
 [node name="SellSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 12 )
+
+[node name="QuestCompleteSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 5 )
 
 [connection signal="pressed" from="Panel/TopPanel/HBoxContainer/Button" to="." method="_on_Button_pressed"]

@@ -1,0 +1,100 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://barlowFontSize16.tres" type="DynamicFont" id=1]
+[ext_resource path="res://barlowFontSize12.tres" type="DynamicFont" id=2]
+[ext_resource path="res://assets/questbuttonclosed.png" type="Texture" id=3]
+[ext_resource path="res://assets/questbutton.png" type="Texture" id=4]
+[ext_resource path="res://QuestContainer.cs" type="Script" id=5]
+
+[node name="QuestContainer" type="HBoxContainer"]
+margin_top = 84.0
+margin_right = 532.0
+margin_bottom = 163.0
+script = ExtResource( 5 )
+
+[node name="Control2" type="Control" parent="."]
+margin_right = 17.0
+margin_bottom = 79.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.05
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+margin_left = 21.0
+margin_right = 365.0
+margin_bottom = 79.0
+size_flags_horizontal = 3
+
+[node name="QuestTitleLabel" type="Label" parent="VBoxContainer"]
+margin_right = 344.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 1 )
+text = "WHISKEY FOR THE WORKERS"
+align = 1
+valign = 2
+autowrap = true
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+margin_top = 24.0
+margin_right = 344.0
+margin_bottom = 79.0
+rect_min_size = Vector2( 0, 55 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+margin_right = 344.0
+margin_bottom = 52.0
+size_flags_horizontal = 3
+
+[node name="QuestTextLabel" type="Label" parent="VBoxContainer/ScrollContainer/VBoxContainer"]
+margin_right = 344.0
+margin_bottom = 33.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 2 )
+text = "There is not enough whiskey for the May 1st Parade. Get to it! Handsome rewards, naturally - we look after our workers."
+autowrap = true
+
+[node name="QuestMissionLabel" type="Label" parent="VBoxContainer/ScrollContainer/VBoxContainer"]
+margin_top = 37.0
+margin_right = 344.0
+margin_bottom = 52.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 2 )
+text = "SELL 4 UNITS OF ALCOHOL IN THISTOWN 0/4"
+align = 1
+autowrap = true
+
+[node name="RewardLabel" type="Label" parent="."]
+margin_left = 369.0
+margin_top = 23.0
+margin_right = 438.0
+margin_bottom = 56.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.2
+custom_colors/font_color = Color( 0.454902, 0.364706, 0.196078, 1 )
+custom_fonts/font = ExtResource( 2 )
+text = "REWARD:
+15 GOLD"
+align = 1
+
+[node name="AcceptBtn" type="TextureButton" parent="."]
+margin_left = 442.0
+margin_right = 510.0
+margin_bottom = 79.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.2
+texture_normal = ExtResource( 3 )
+texture_pressed = ExtResource( 4 )
+expand = true
+stretch_mode = 3
+
+[node name="Control" type="Control" parent="."]
+margin_left = 514.0
+margin_right = 532.0
+margin_bottom = 79.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.05
+
+[connection signal="pressed" from="AcceptBtn" to="." method="_on_AcceptBtn_pressed"]

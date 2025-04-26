@@ -8,12 +8,67 @@ using System.Linq;
 public class CityView : Control
 {
 
+	// flavor-text templates per good; {city}, {quantity}, {good} will be replaced
+	private static readonly Dictionary<string,string[]> _templates = new Dictionary<string,string[]>
+	{
+		["Wood"] = new[]
+		{
+			"The sawmills in {city} are running low on {good}. They need {quantity} logs to keep building!",
+			"{city}'s carpenters are begging for {quantity} bundles of {good}. Can you help?",
+			"Word is that {city} wants {quantity} stacks of {good} for new fortifications."
+		},
+		["Stone"] = new[]
+		{
+			"{city} has finished mining but still needs {quantity} blocks of {good}.",
+			"A landslide wiped out the nearby quarry—{city} now requires {quantity} stones.",
+			"Repair crews in {city} are waiting on {quantity} slabs of {good}."
+		},
+		["Raw Iron"] = new[]
+		{
+			"Foundries in {city} crave {quantity} ores of {good} for smelting.",
+			"{city}’s blacksmiths ran out of {good}—they need {quantity} lumps, pronto!",
+			"Rumor says {city} will pay handsomely for {quantity} chunks of raw iron."
+		},
+		["Iron Ingots"] = new[]
+		{
+			"{city}'s armories want {quantity} {good} for forging weapons.",
+			"Merchants report a shortage of {quantity} ingots in {city}.",
+			"Forge-masters in {city} will trade favours for {quantity} pieces of {good}."
+		},
+		["Cotton"] = new[]
+		{
+			"Textile guilds in {city} need {quantity} bolts of {good}.",
+			"{city}’s tailors are desperate for {quantity} sacks of cotton.",
+			"An order from {city} calls for {quantity} bales of {good} immediately."
+		},
+		["Fabric"] = new[]
+		{
+			"{city}’s nobles demand {quantity} rolls of fine {good}.",
+			"Dressmakers in {city} placed an urgent order: {quantity} yards of fabric.",
+			"{city}’s festival costumes need {quantity} lengths of {good}."
+		},
+		["Grain"] = new[]
+		{
+			"Granaries in {city} are low—deliver {quantity} sacks of {good}.",
+			"{quantity} bushels of grain are needed to feed {city}'s populace.",
+			"{city} will collapse into famine without {quantity} heaps of {good}."
+		},
+		["Bread"] = new[]
+		{
+			"Bakers in {city} ran out of {good}—they ask for {quantity} loaves.",
+			"The poor quarter of {city} needs {quantity} fresh loaves of bread.",
+			"Deliver {quantity} baskets of {good} to stave off hunger in {city}."
+		},
+	};
 	
 	// Label styling
 	[Export] public DynamicFont LabelFont;
 	[Export] public Color LabelColor = new Color(1,1,1);
 	[Export] public Color normalColor = new Color(0.5f, 0.3f, 0.1f); // Normal brown
 	
+	// Path to your .tscn file – adjust as needed.
+	[Export] private PackedScene QuestContainerScene;
+		
 	private Label               _cityNameLabel;
 	private TextureRect         _bannerTexture;
 	
@@ -26,6 +81,9 @@ public class CityView : Control
 	private Label               _goldLabel;
 	private AudioStreamPlayer   _buySound;
 	private AudioStreamPlayer   _sellSound;
+	private AudioStreamPlayer   _questCompleteSound;
+	private VBoxContainer       _questsContainer;
+	private VBoxContainer       _trackedQuestsContainer;
 
 	// markup & markdown factors
 	private const double BuyMarkup  = 1.10;
@@ -38,6 +96,8 @@ public class CityView : Control
 	
 	private List<SpinBox> _amountFields = new List<SpinBox>();
 	
+	private List<QuestContainer> _trackedQuestContainers = new List<QuestContainer>();
+	
 	
 	public override void _Ready()
 	{
@@ -49,15 +109,21 @@ public class CityView : Control
 		
 		_buySound   = FindNode("BuySound", true, false)   as AudioStreamPlayer;
 		_sellSound  = FindNode("SellSound", true, false)  as AudioStreamPlayer;
+		_questCompleteSound  = FindNode("QuestCompleteSound", true, false)  as AudioStreamPlayer;
+		
+		_questsContainer         = FindNode("AvailableQuests", true, false)  as VBoxContainer;
+		_trackedQuestsContainer  = FindNode("TrackedQuests",   true, false)    as VBoxContainer;
 		
 		double sfxVolume = 40*GameState.masterVolume*GameState.sfxVolume-40;
 		
 		if (sfxVolume>-40.0){
 			_buySound.VolumeDb = (float)sfxVolume;
 			_sellSound.VolumeDb = (float)sfxVolume;
+			_questCompleteSound.VolumeDb = (float)sfxVolume;
 		} else{
 			_buySound.VolumeDb = (float)-80.0;
 			_sellSound.VolumeDb = (float)-80.0;
+			_questCompleteSound.VolumeDb = (float)-80.0;
 		}
 		
 
@@ -68,8 +134,7 @@ public class CityView : Control
 		_bannerTexture.Texture =   GameState.CityBanner;
 		
 		_rng = new RandomNumberGenerator();
-		// 3) optional: reseed RNG so that city sim is reproducible
-		_rng.Seed = GameState.firstLoadSeed;
+		_rng.Randomize();
 		_economy = GameState.CityEconomies[GameState.CurrentCity];
 
 		// 2) hook up your graph UI (assumes you added GraphControl under this scene)
@@ -85,6 +150,95 @@ public class CityView : Control
 		GameState.OnGoldChanged += UpdateGold;
 		UpdateGold(GameState.playerGold); // set the initial value
 		
+		SpawnNewQuests();
+		
+	}
+	public void RepopulateTrackedQuests()
+	{
+		foreach (Node child in _trackedQuestsContainer.GetChildren())
+		{
+			child.QueueFree();
+		}
+		
+		_trackedQuestContainers.Clear();
+		
+		foreach (Quest quest in GameState.activeQuests)
+		{
+			if (quest._cityTarget == GameState.CurrentCity)
+			{
+				SpawnQuestUI(quest,true,_trackedQuestsContainer);
+			}
+		}
+	}
+	public void SpawnNewQuests()
+	{
+		foreach (Quest quest in GameState.activeQuests)
+		{
+			if (quest._cityTarget == GameState.CurrentCity)
+			{
+				SpawnQuestUI(quest,true,_trackedQuestsContainer);
+			}
+		}
+		
+		// spawn an available quest
+		SpawnAvailableQuest();
+	}
+	
+	public void SpawnAvailableQuest()
+	{
+		
+		// 1) pick a random good index
+		int goodType      = _rng.RandiRange(0, GameState.goodsNames.Count - 1);
+		string goodName   = GameState.goodsNames[goodType];
+		string city       = GameState.CurrentCity;
+
+		// 2) decide quantity and reward
+		int quantityNeeded  = _rng.RandiRange(5, 20);   // inclusive 5–20
+		int rewardPerUnit   = _rng.RandiRange(5, 10);   // inclusive 5–10
+		int totalRewardGold = quantityNeeded * rewardPerUnit;
+
+		// 3) pick and fill a template
+		var choices   = _templates[goodName];
+		string tpl    = choices[_rng.RandiRange(0, choices.Length - 1)];
+		string text   = tpl
+			.Replace("{city}",    city)
+			.Replace("{quantity}", quantityNeeded.ToString())
+			.Replace("{good}",     goodName);
+
+		// 4) assemble the Quest
+		var q = new Quest
+		{
+			_questName       = $"Deliver {quantityNeeded}× {goodName} to {city}",
+			_questText       = text,
+			_questMission    = $"SELL 0/{quantityNeeded} {goodName.ToUpper()} IN {city}",
+			_questReward     = $"{totalRewardGold} gold",
+			_cityTarget      = city,
+			_goodType        = goodType,
+			_quanityNeeded   = quantityNeeded,
+			_questRewardGold = totalRewardGold
+			// _quantityDelivered defaults to 0
+		};
+		SpawnQuestUI(q, false, _questsContainer);
+	}
+	
+	public QuestContainer SpawnQuestUI(Quest quest, bool isTracked, VBoxContainer container)
+	{
+		var qc = (QuestContainer)QuestContainerScene.Instance();
+		// populate it
+		qc.showAcceptButton    = !isTracked;
+		qc.quest               = quest;
+		qc.QuestName           = quest._questName;
+		qc.QuestText           = quest._questText;
+		qc.QuestMission        = quest._questMission;
+		qc.QuestReward         = quest._questReward;
+		qc.CityView            = this;
+		// add to the scene
+		container.AddChild(qc);
+		if (isTracked)
+		{
+			_trackedQuestContainers.Add(qc);
+		}
+		return qc;
 	}
 	
 	private void UpdateGold(int newGold)
@@ -323,15 +477,29 @@ public class CityView : Control
 	{
 		int sellPrice = (int)Math.Ceiling(_economy.GetSellPrice(goodIndex)*amountField.Value);
 		
+		bool completedOne = false;
 		if (GameState.goodsOwned[goodIndex]>=(int)amountField.Value){
 			_economy.ExternalSell(goodIndex, 1f, (int)amountField.Value);
 			GameState.goodsOwned[goodIndex] -= (int)amountField.Value;
 			
+			foreach (QuestContainer questContainer in _trackedQuestContainers)
+			{
+				completedOne = questContainer.quest.DeliveredGoodToCity(goodIndex, (int)amountField.Value, GameState.CurrentCity, questContainer);
+			}
+			
 			GameState.playerGold += sellPrice;
 			UpdatePriceLabels(goodIndex);
 			
+			if (!completedOne)
+			{
+				_sellSound.Play();
+			} 
+			else 
+			{
+				_questCompleteSound.Play();
+				RepopulateTrackedQuests();
+			}
 		}
-		_sellSound.Play();
 	}
 	public void _on_Button_pressed()
 	{
