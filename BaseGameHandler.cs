@@ -163,6 +163,16 @@ public static class GameState
 		"Bread"
 	};
 	
+	public static List<int> goodsWeights = new List<int>{
+		5,
+		10,
+		15,
+		18,
+		3,
+		3,
+		5,
+		3
+	};
 	
 	// audio controls
 	
@@ -322,6 +332,7 @@ public class BaseGameHandler : Node2D
 	private AudioStreamPlayer _bgmPlayer;
 	private Panel             _autosavePanel;
 	private SaveLoadDialog    _saveLoadDialog;
+	private Control    		  _inventoryScreen;
 
 	// World offset & target in “virtual” world coords
 	private Vector2 _worldPos  = Vector2.Zero;
@@ -621,6 +632,7 @@ public class BaseGameHandler : Node2D
 		_bgmPlayer      = FindNode("BGMPlayer", true, false) as AudioStreamPlayer;
 		_autosavePanel  = FindNode("AutosavePanel", true, false) as Panel;
 		_saveLoadDialog = FindNode("SaveLoadDialog", true, false) as SaveLoadDialog;
+		_inventoryScreen= FindNode("InventoryScreen", true, false) as Control;
 		
 		
 		_saveLoadDialog.Connect("popup_hide",    this, nameof(OnSaveLoadClosed));
@@ -1116,7 +1128,13 @@ public class BaseGameHandler : Node2D
 	{
 		((WindowDialog)_saveLoadDialog).PopupCentered();
 	}
+
+	private void _on_inventoryButton_pressed()
+	{
+		_inventoryScreen.Show();
+	}
 }
+
 
 
 
