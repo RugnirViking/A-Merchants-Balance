@@ -3,10 +3,130 @@ using System;
 using System.Collections.Generic;
 
 
+public static class SaveManager
+{
+	private const string GlobalStorageKey = "RugnirShemonMerchantGame";
+	
+	private static readonly bool IsBrowser = OS.HasFeature("HTML5");
+
+	public static void Save(string key, string data)
+	{
+		if (IsBrowser)
+		{
+			JavaScript.Eval($"localStorage.setItem('{GlobalStorageKey+key}', '{data}');");
+		}
+		else
+		{
+			// Save to file
+			var file = new File();
+			file.Open($"user://savegame_{key}.json", File.ModeFlags.Write);
+			file.StoreString(data);
+			file.Close();
+		}
+	}
+
+	public static string Load(string key)
+	{
+		if (IsBrowser)
+		{
+			return JavaScript.Eval($"localStorage.getItem('{GlobalStorageKey+key}')") as string ?? "";
+		}
+		else
+		{
+			// Load from file
+			var file = new File();
+			if (file.FileExists($"user://savegame_{key}.json"))
+			{
+				file.Open($"user://savegame_{key}.json", File.ModeFlags.Read);
+				string data = file.GetAsText();
+				file.Close();
+				return data;
+			}
+			else
+			{
+				return "";
+			}
+		}
+	}
+
+	public static void Clear(string key)
+	{
+		if (IsBrowser)
+		{
+			JavaScript.Eval($"localStorage.removeItem('{GlobalStorageKey+key}');");
+		}
+		else
+		{
+			if (new File().FileExists($"user://savegame_{key}.json"))
+			{
+				var dir = new Directory();
+				if (dir.Open("user://") == Error.Ok)
+				{
+					dir.Remove($"savegame_{key}.json");
+				}
+			}
+		}
+	}
+	public static List<string> GetSaveKeys()
+	{
+		var keys = new List<string>();
+
+		if (IsBrowser)
+		{
+			// get an array of all localStorage keys starting with our prefix,
+			// then strip off the prefix so 'slot1','slot2',etc.
+			int prefixLen = GlobalStorageKey.Length;
+			var js = 
+			  $"JSON.stringify(Object.keys(localStorage)" +
+			  $".filter(k=>k.startsWith('{GlobalStorageKey}'))" +
+			  $".map(k=>k.slice({prefixLen})))";
+			var json = JavaScript.Eval(js) as string;
+			var parsed = JSON.Parse(json);
+			if (parsed.Error == Error.Ok)
+				foreach (var item in (parsed.Result as Godot.Collections.Array)){
+					if (item!="lastSaved")
+						keys.Add(item as string);
+				}
+		}
+		else
+		{
+			var dir = new Directory();
+			if (dir.Open("user://") == Error.Ok)
+			{
+				dir.ListDirBegin(false, true);
+				string f;
+				while ((f = dir.GetNext()) != "")
+				{
+					if (f.StartsWith("savegame_") && f.EndsWith(".json"))
+					{
+						
+						// strip "savegame_" and ".json"
+						var inner = f.Substring("savegame_".Length,
+							f.Length - "savegame_".Length - ".json".Length);
+						if (inner!="lastSaved")
+						{
+							keys.Add(inner);
+						}
+					}
+				}
+				dir.ListDirEnd();
+			}
+		}
+
+		return keys;
+	}
+}
+
 public static class GameState
 {
+	// Don't need to be saved
 	public static string CurrentCity;
 	public static Texture CityBanner;
+	public static event Action<int> OnGoldChanged;
+	public static string CurrentSaveGameKey = "slot1";
+	
+	
+	// Need to be saved
 	public static bool isFirstLoad = true;
 	public static ulong firstLoadSeed = 0;
 	public static Vector2 worldPos;
@@ -16,8 +136,167 @@ public static class GameState
 		
 		
 	// Player stuff
-	public static int gold = 0;
-	public static int[] goodsOwned;
+	private static int _playerGold = 1000;
+	public static int playerGold
+	{
+		get => _playerGold;
+		set
+		{
+			if (_playerGold != value)
+			{
+				_playerGold = value;
+				OnGoldChanged?.Invoke(_playerGold);
+			}
+		}
+	}
+
+	public static int[] goodsOwned = new int[8];
+	
+	public static List<string> goodsNames = new List<String>{
+		"Wood",
+		"Stone",
+		"Raw Iron",
+		"Iron Ingots",
+		"Cotton",
+		"Fabric",
+		"Grain",
+		"Bread"
+	};
+	
+	
+	// audio controls
+	
+	public static float masterVolume  = 1.0f;
+	public static float sfxVolume     = 1.0f;
+	public static float ambientVolume = 1.0f;
+	public static float musicVolume   = 1.0f;
+	
+	public static void SaveGame()
+	{
+		// build a big Dictionary
+		var data = new Godot.Collections.Dictionary
+		{
+			["isFirstLoad"]   = isFirstLoad,
+			["firstLoadSeed"] = firstLoadSeed,
+			["worldPosX"]     = worldPos.x,
+			["worldPosY"]     = worldPos.y,
+			["playerGold"]    = playerGold,
+			["goodsOwned"]    = new Godot.Collections.Array(goodsOwned),
+			["masterVolume"]  = masterVolume,
+			["sfxVolume"]     = sfxVolume,
+			["ambientVolume"] = ambientVolume,
+			["musicVolume"]   = musicVolume
+		};
+
+		// serialize all CityEconomies
+		var econDict = new Godot.Collections.Dictionary();
+		foreach (var kv in CityEconomies)
+			econDict[kv.Key] = kv.Value.ToDictionary();
+		data["CityEconomies"] = econDict;
+
+		// turn into JSON text
+		string json = JSON.Print(data);
+		SaveManager.Save(CurrentSaveGameKey, json);
+		
+		SaveManager.Save("lastSaved", CurrentSaveGameKey);
+		GD.Print("GameState saved.");
+	}
+	
+	public static void LoadGame()
+	{
+		string json = SaveManager.Load(CurrentSaveGameKey);
+		if (string.IsNullOrEmpty(json))
+		{
+			GD.Print("No save found for key " + CurrentSaveGameKey);
+			return;
+		}
+
+		var parsed = JSON.Parse(json);
+		if (parsed.Error != Error.Ok)
+		{
+			GD.PrintErr("Failed to parse save JSON: " + parsed.Error);
+			return;
+		}
+
+		var data = parsed.Result as Godot.Collections.Dictionary;
+
+		// --- primitive fields ---
+		isFirstLoad   = data.Contains("isFirstLoad")
+						  ? (bool)data["isFirstLoad"]
+						  : true;
+
+		if (data.Contains("firstLoadSeed"))
+		{
+			var raw = data["firstLoadSeed"];
+			if (raw is double d)
+			{
+				// clamp to [0, UInt64.MaxValue] and drop fraction
+				if (d <= 0) 
+					firstLoadSeed = 0;
+				else if (d >= ulong.MaxValue) 
+					firstLoadSeed = ulong.MaxValue;
+				else 
+					firstLoadSeed = (ulong)d;
+			}
+			else if (raw is long l)
+			{
+				firstLoadSeed = l < 0 ? 0UL : (ulong)l;
+			}
+			else if (raw is string s && ulong.TryParse(s, out var parsedulong))
+			{
+				firstLoadSeed = parsedulong;
+			}
+			else
+			{
+				// fallback
+				firstLoadSeed = 0;
+			}
+		}
+		else
+		{
+			firstLoadSeed = 0;
+		}
+
+		float px = data.Contains("worldPosX")
+						  ? Convert.ToSingle(data["worldPosX"])
+						  : 0f;
+		float py = data.Contains("worldPosY")
+						  ? Convert.ToSingle(data["worldPosY"])
+						  : 0f;
+		worldPos = new Vector2(px, py);
+
+		playerGold = data.Contains("playerGold")
+						  ? Convert.ToInt32(data["playerGold"])
+						  : 1000;
+
+		// --- goodsOwned array ---
+		if (data.Contains("goodsOwned"))
+		{
+			var arr = data["goodsOwned"] as Godot.Collections.Array;
+			for (int i = 0; i < goodsOwned.Length && i < arr.Count; i++)
+				goodsOwned[i] = Convert.ToInt32(arr[i]);
+		}
+
+		// --- volume settings ---
+		masterVolume  = data.Contains("masterVolume")  ? Convert.ToSingle(data["masterVolume"])  : 1f;
+		sfxVolume     = data.Contains("sfxVolume")     ? Convert.ToSingle(data["sfxVolume"])     : 1f;
+		ambientVolume = data.Contains("ambientVolume") ? Convert.ToSingle(data["ambientVolume"]) : 1f;
+		musicVolume   = data.Contains("musicVolume")   ? Convert.ToSingle(data["musicVolume"])   : 1f;
+
+		// --- CityEconomies ---
+		CityEconomies.Clear();
+		if (data.Contains("CityEconomies"))
+		{
+			var econDict = data["CityEconomies"] as Godot.Collections.Dictionary;
+			foreach (string cityKey in econDict.Keys)
+			{
+				var simDict = econDict[cityKey] as Godot.Collections.Dictionary;
+				CityEconomies[cityKey] = MarketSimulator.FromDictionary(simDict);
+			}
+		}
+
+		GD.Print("GameState loaded.");
+	}
 }
 
 public class BaseGameHandler : Node2D
@@ -27,15 +306,22 @@ public class BaseGameHandler : Node2D
 	public float MoveSpeed = 200f;
 
 		  
-	private TextureRect    _background;
-	private ShaderMaterial _material;
-	private Texture        _texture;
-	private Sprite         _player;
-	private Line2D         _line;
-	private ColorRect      _glassEffect;
-	private ShaderMaterial _glassMaterial;
-	private Node2D         _labelContainer;
-	private Minimap        _minimap;
+	private TextureRect       _background;
+	private ShaderMaterial    _material;
+	private Texture           _texture;
+	private Sprite            _player;
+	private Line2D            _line;
+	private ColorRect         _glassEffect;
+	private ShaderMaterial    _glassMaterial;
+	private ShaderMaterial    _xMapEdgeEffect;
+	private ShaderMaterial    _yMapEdgeEffect;
+	private Node2D            _labelContainer;
+	private Minimap           _minimap;
+	private Label             _goldLabel;
+	private Label             _positionLabel;
+	private AudioStreamPlayer _bgmPlayer;
+	private Panel             _autosavePanel;
+	private SaveLoadDialog    _saveLoadDialog;
 
 	// World offset & target in “virtual” world coords
 	private Vector2 _worldPos  = Vector2.Zero;
@@ -47,7 +333,6 @@ public class BaseGameHandler : Node2D
 	private MultiMesh _multiMesh;
 
 	private const int ScatterCount = 200;
-	private const float WorldExtent = 30f;
 	private const int SheetCols = 9;
 	private const int SheetRows = 2;
 	
@@ -323,12 +608,23 @@ public class BaseGameHandler : Node2D
 		// Grab your nodes
 		_background     = GetNode<TextureRect>("BackgroundLayer/Background");
 		_material       = (ShaderMaterial)_background.Material;
+		_xMapEdgeEffect = (ShaderMaterial)(FindNode("XMapEdgeEffect",true,false) as ColorRect).Material;
+		_yMapEdgeEffect = (ShaderMaterial)(FindNode("YMapEdgeEffect",true,false) as ColorRect).Material;
 		_texture        = _background.Texture;
 		_player         = GetNode<Sprite>("Player");
 		_line           = GetNode<Line2D>("LineLayer/TargetLine");
 		_glassEffect    = GetNode<ColorRect>("GlassLayer/GlassEffect");
 		_glassMaterial  = (ShaderMaterial)_glassEffect.Material;
 		_labelContainer = GetNodeOrNull<Node2D>("CityLabels");
+		_goldLabel      = FindNode("GoldLabel", true, false) as Label;
+		_positionLabel  = FindNode("PositonLabel", true, false) as Label;
+		_bgmPlayer      = FindNode("BGMPlayer", true, false) as AudioStreamPlayer;
+		_autosavePanel  = FindNode("AutosavePanel", true, false) as Panel;
+		_saveLoadDialog = FindNode("SaveLoadDialog", true, false) as SaveLoadDialog;
+		
+		
+		_saveLoadDialog.Connect("popup_hide",    this, nameof(OnSaveLoadClosed));
+		
 		if (_labelContainer == null)
 		{
 			GD.PrintErr("CityLabels node not found!");
@@ -338,6 +634,8 @@ public class BaseGameHandler : Node2D
 		var rng = new RandomNumberGenerator();
 		if (GameState.isFirstLoad)
 		{
+			
+			GameState.LoadGame();
 			rng.Randomize();
 			GameState.isFirstLoad = false;
 			GameState.firstLoadSeed = rng.Seed;
@@ -346,16 +644,44 @@ public class BaseGameHandler : Node2D
 			_worldPos = GameState.worldPos;
 			_targetPos = _worldPos;
 		}
+		
+		// bind the gold to the label
+		GameState.OnGoldChanged += UpdateGold;
+		UpdateGold(GameState.playerGold); // set the initial value
+		
+		
 		// Center immediately
 		CenterPlayer();
 		GetViewport().Connect("size_changed", this, nameof(OnViewportSizeChanged));
 		
 		InitScatter(rng);
 		// update shader scroll in ready 
+		
+		_worldPos = GameState.worldPos;
+		_targetPos = GameState.worldPos;
 		UpdateShaderScroll();
 		
 		InitMinimap();
+		
+		(FindNode("gameVolumeSlider",true,false) as HSlider        ).Value = 100 * GameState.masterVolume;
+		(FindNode("soundEffectsVolumeSlider",true,false) as HSlider).Value = 100 * GameState.sfxVolume;
+		(FindNode("ambientVolumeSlider",true,false) as HSlider     ).Value = 100 * GameState.ambientVolume;
+		(FindNode("musicVolumeSlider",true,false) as HSlider       ).Value = 100 * GameState.musicVolume;
+		
+		
 	}
+	
+	private void UpdateGold(int newGold)
+	{
+		_goldLabel.Text = "Gold: " + newGold;
+	}
+	
+
+	public override void _ExitTree()
+	{
+		GameState.OnGoldChanged -= UpdateGold;
+	}
+	
 	private void InitMinimap()
 	{
 		_minimap = GetNode<Control>("UILayer/Minimap") as Minimap;
@@ -483,6 +809,24 @@ public class BaseGameHandler : Node2D
 				EnterCityView(_closestCity);
 			}
 		}
+		else if(@event.IsActionPressed("debugPos"))
+		{
+			foreach (Cityscript city in _cities){
+				GD.Print($"City {city.Name} is at Pos {city.GetMeta("world_pos")}");
+			}
+			
+			Vector2 screenCenter = GetViewport().Size * 0.5f;
+			Vector2 _playerPos    = _worldPos + screenCenter;
+			GD.Print($"Player pos: {_playerPos}");
+		}
+		else if(@event.IsActionPressed("debugTriggerAutosave"))
+		{
+			GameState.SaveGame();
+		}
+		else if(@event.IsActionPressed("debugClearSaves"))
+		{
+			SaveManager.Clear("test");
+		}
 	}
 	
 	Vector2 NormalizeToMinimap(Vector2 worldPos, Vector2 minimapSize)
@@ -518,6 +862,24 @@ public class BaseGameHandler : Node2D
 		_targetPos = _worldPos + clickRel;
 	}
 	
+	private async void CallLater(float delaySeconds, string methodName)
+	{
+		await ToSignal(GetTree().CreateTimer(delaySeconds), "timeout");
+		CallDeferred(methodName);
+	}
+	
+	private void HideAutosave()
+	{
+		_autosavePanel.Hide();
+	}
+	
+	private void Autosave()
+	{
+		_autosavePanel.Show();
+		GameState.SaveGame();
+		CallLater(0.5f, nameof(HideAutosave));
+	}
+	
 	private Vector2 ApplyBarrelDistortion(Vector2 uv, float strength, Vector2 rectSize)
 	{
 		float dynamicStrength = strength * (1f - Mathf.Max(rectSize.x, rectSize.y));
@@ -531,6 +893,58 @@ public class BaseGameHandler : Node2D
 
 		// Back to 0..1 UV
 		return (distorted + new Vector2(1f, 1f)) * 0.5f;
+	}
+	public void UpdateCoords(){
+		Vector2 screenCenter = GetViewport().Size * 0.5f;
+		Vector2 _playerPos    = _worldPos + screenCenter;
+		_positionLabel.Text = $"Pos: {_playerPos.x.ToString("F0")}, {_playerPos.y.ToString("F0")}";
+	}
+	public void UpdateMapEdgeShaders()
+	{
+		float fadeDistance = 100f;
+		Vector2 screenCenter = GetViewport().Size * 0.5f;
+		Vector2 _playerPos    = _worldPos + screenCenter;
+		Vector2 worldMin = new Vector2(-2000, -2000);
+		Vector2 worldMax = new Vector2(2000, 2000);
+		
+		float xExtent = 0.0f;
+		float yExtent = 0.0f;
+		
+		Vector2 xSide = new Vector2(-1, 0);
+		Vector2 ySide = new Vector2(-1, 0);
+		// left side?
+		if (_playerPos.x < worldMin.x)
+		{
+			float d = worldMin.x - _playerPos.x;
+			xExtent = Mathf.Clamp(d / fadeDistance, 0f, 1f);
+			xSide = new Vector2(-1, 0);
+		}
+		// right side?
+		else if (_playerPos.x > worldMax.x)
+		{
+			float d = _playerPos.x - worldMax.x;
+			xExtent = Mathf.Clamp(d / fadeDistance, 0f, 1f);
+			xSide = new Vector2(1, 0);
+		}
+		_xMapEdgeEffect.SetShaderParam("extent"  ,      xExtent);
+		_xMapEdgeEffect.SetShaderParam("side_vec",      xSide);
+		
+		if (_playerPos.y < worldMin.y)
+		{
+			float d = worldMin.y - _playerPos.y;
+			yExtent = Mathf.Clamp(d / fadeDistance, 0f, 1f);
+			ySide = new Vector2(0, 1);
+		}
+		else if (_playerPos.y > worldMax.y)
+		{
+			float d = _playerPos.y - worldMax.y;
+			yExtent = Mathf.Clamp(d / fadeDistance, 0f, 1f);
+			ySide = new Vector2(0, -1);
+		}
+		
+		_yMapEdgeEffect.SetShaderParam("extent"  ,      yExtent);
+		_yMapEdgeEffect.SetShaderParam("side_vec",      ySide);
+		
 	}
 
 	public override void _Process(float delta)
@@ -547,9 +961,12 @@ public class BaseGameHandler : Node2D
 			Vector2 step = diff.Normalized() * MoveSpeed * delta;
 			if (step.Length() > diff.Length()) step = diff;
 			_worldPos += step;
+			GameState.worldPos = _worldPos;
 
 			UpdateShaderScroll();
+			UpdateCoords();
 		}
+		UpdateMapEdgeShaders();
 
 		// **draw the line** in screen‑space
 		Vector2 screenCenter = GetViewport().Size * 0.5f;
@@ -593,7 +1010,10 @@ public class BaseGameHandler : Node2D
 			HideCityPrompt();
 		}
 		UpdateMinimap();
-
+		
+		if (Engine.GetFramesDrawn() % 600 == 0){
+			Autosave();
+		}
 	}
 	
 	private void EnterCityView(Cityscript city)
@@ -631,6 +1051,80 @@ public class BaseGameHandler : Node2D
 	{
 			GD.Print("Clicked!");
 	}
+	
+
+	private void _on_pauseButton_pressed()
+	{
+		PopupMenu pauseMenu = FindNode("pauseMenu",true,false) as PopupMenu;
+		pauseMenu.PopupCentered();
+	}
+	
+
+	private void _on_resumeButton_pressed()
+	{
+		PopupMenu pauseMenu = FindNode("pauseMenu",true,false) as PopupMenu;
+		pauseMenu.Hide();
+	}
+
+	private void _on_quitButton_pressed()
+	{
+		Autosave();
+		var mainMenu = (PackedScene)GD.Load("res://mainMenu.tscn");
+		GetTree().ChangeSceneTo(mainMenu);
+	}
+	
+	private void UpdateSoundVolumes()
+	{
+		double musicVolume = 40*GameState.masterVolume*GameState.musicVolume-40;
+		if (musicVolume>-40.0){
+			_bgmPlayer.VolumeDb = (float)musicVolume;
+		} else{
+			_bgmPlayer.VolumeDb = (float)-80.0;
+		}
+		
+	}
+	
+	private void OnSaveLoadClosed(){
+		_worldPos = GameState.worldPos;
+		_targetPos = GameState.worldPos;
+		
+		UpdateShaderScroll();
+	}
+	
+
+	private void _on_gameVolumeSlider_value_changed(float value)
+	{
+		GameState.masterVolume = value/100;
+		UpdateSoundVolumes();
+	}
+	private void _on_soundEffectsVolumeSlider_value_changed(float value)
+	{
+		GameState.sfxVolume = value/100;
+		UpdateSoundVolumes();
+	}
+	private void _on_musicVolumeSlider_value_changed(float value)
+	{
+		GameState.musicVolume = value/100;
+		UpdateSoundVolumes();
+	}
+	private void _on_ambientVolumeSlider_value_changed(float value)
+	{
+		GameState.ambientVolume = value/100;
+		UpdateSoundVolumes();
+	}
+	private void _on_saveLoadButton_pressed()
+	{
+		((WindowDialog)_saveLoadDialog).PopupCentered();
+	}
 }
+
+
+
+
+
+
+
+
+
 
 

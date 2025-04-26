@@ -198,7 +198,7 @@ public static class ListExtensions
 public class MarketSimulator
 {
 	public int _numGoods;
-	private float[] MidPrice;
+	public float[] MidPrice;
 	private float[] BasePrice;
 	private float[] Stickiness;
 	private float _buyImpact;
@@ -223,7 +223,51 @@ public class MarketSimulator
 		_crossInfluence = crossInfluence;
 		_spreadFraction = spreadFraction;
 	}
+	
+	// Convert this simulator into a serializable Dictionary
+	public Godot.Collections.Dictionary ToDictionary()
+	{
+		return new Godot.Collections.Dictionary
+		{
+			["numGoods"]       = _numGoods,
+			["midPrice"]       = new Godot.Collections.Array(MidPrice),
+			["basePrice"]      = new Godot.Collections.Array(BasePrice),
+			["stickiness"]     = new Godot.Collections.Array(Stickiness),
+			["buyImpact"]      = _buyImpact,
+			["sellImpact"]     = _sellImpact,
+			["drift"]          = _drift,
+			["crossInfluence"] = _crossInfluence,
+			["spreadFraction"] = _spreadFraction
+		};
+	}
 
+	// Rebuild a MarketSimulator from one of those Dictionaries
+	public static MarketSimulator FromDictionary(Godot.Collections.Dictionary data)
+	{
+		var sim = new MarketSimulator(
+			Convert.ToInt32(data["numGoods"]),
+			ArrayFrom(data["basePrice"] as Godot.Collections.Array),
+			ArrayFrom(data["stickiness"] as Godot.Collections.Array),
+			Convert.ToSingle(data["buyImpact"]),
+			Convert.ToSingle(data["sellImpact"]),
+			Convert.ToSingle(data["drift"]),
+			Convert.ToSingle(data["crossInfluence"]),
+			Convert.ToSingle(data["spreadFraction"])
+		);
+
+		sim.MidPrice         = ArrayFrom(data["midPrice"] as Godot.Collections.Array);
+
+		return sim;
+	}
+
+	private static float[] ArrayFrom(Godot.Collections.Array arr)
+	{
+		var outF = new float[arr.Count];
+		for (int i = 0; i < arr.Count; i++)
+			outF[i] = Convert.ToSingle(arr[i]);
+		return outF;
+	}
+	
 	public void StepSimulation()
 	{
 		float[] old = (float[])MidPrice.Clone();

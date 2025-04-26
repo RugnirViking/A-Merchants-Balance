@@ -1,0 +1,101 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://barlowFontSize36.tres" type="DynamicFont" id=1]
+[ext_resource path="res://barlowFontSize16.tres" type="DynamicFont" id=2]
+[ext_resource path="res://SaveLoadDialog.cs" type="Script" id=3]
+
+[node name="Control" type="WindowDialog"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 3 )
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 20.0
+margin_top = 20.0
+margin_right = -20.0
+margin_bottom = -20.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+margin_right = 1160.0
+margin_bottom = 760.0
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer"]
+margin_right = 1160.0
+margin_bottom = 44.0
+custom_fonts/font = ExtResource( 1 )
+text = "Save / Load Game"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+margin_top = 48.0
+margin_right = 1160.0
+margin_bottom = 730.0
+size_flags_vertical = 3
+
+[node name="SaveList" type="ItemList" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+margin_right = 938.0
+margin_bottom = 682.0
+size_flags_horizontal = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+margin_left = 942.0
+margin_right = 1160.0
+margin_bottom = 682.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/PanelContainer"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 211.0
+margin_bottom = 675.0
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/VBoxContainer"]
+margin_right = 204.0
+margin_bottom = 20.0
+custom_fonts/font = ExtResource( 2 )
+text = "Details: "
+
+[node name="DetailsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/VBoxContainer"]
+margin_top = 24.0
+margin_right = 204.0
+margin_bottom = 44.0
+custom_fonts/font = ExtResource( 2 )
+text = "Some details about the save"
+
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+margin_top = 734.0
+margin_right = 1160.0
+margin_bottom = 760.0
+
+[node name="Load" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+margin_right = 287.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 2 )
+text = "Load"
+
+[node name="Overwrite" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+margin_left = 291.0
+margin_right = 578.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 2 )
+text = "Overwrite"
+
+[node name="New" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+margin_left = 582.0
+margin_right = 869.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 2 )
+text = "New"
+
+[node name="Close" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+margin_left = 873.0
+margin_right = 1160.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 2 )
+text = "Close"

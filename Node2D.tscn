@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=2]
+[gd_scene load_steps=43 format=2]
 
 [ext_resource path="res://assets/player.png" type="Texture" id=1]
 [ext_resource path="res://assets/background.png" type="Texture" id=2]
@@ -11,8 +11,22 @@
 [ext_resource path="res://Cityscript.cs" type="Script" id=9]
 [ext_resource path="res://assets/scroll.png" type="Texture" id=10]
 [ext_resource path="res://LabelPrototype.cs" type="Script" id=11]
+[ext_resource path="res://assets/banner1.png" type="Texture" id=12]
+[ext_resource path="res://assets/banner6.png" type="Texture" id=13]
+[ext_resource path="res://assets/banner9.png" type="Texture" id=14]
+[ext_resource path="res://assets/banner4.png" type="Texture" id=15]
+[ext_resource path="res://assets/banner2.png" type="Texture" id=16]
+[ext_resource path="res://assets/banner3.png" type="Texture" id=17]
+[ext_resource path="res://assets/banner5.png" type="Texture" id=18]
+[ext_resource path="res://assets/banner7.png" type="Texture" id=19]
+[ext_resource path="res://assets/banner8.png" type="Texture" id=20]
 [ext_resource path="res://Minimap.cs" type="Script" id=21]
-[ext_resource path="res://PauseButton.cs" type="Script" id=22]
+[ext_resource path="res://barlowFontSize16.tres" type="DynamicFont" id=22]
+[ext_resource path="res://barlowFontSize36.tres" type="DynamicFont" id=23]
+[ext_resource path="res://assets/minimap.png" type="Texture" id=24]
+[ext_resource path="res://sfx/GamejamTheme2.mp3" type="AudioStream" id=25]
+[ext_resource path="res://sfx/click.wav" type="AudioStream" id=26]
+[ext_resource path="res://SaveLoadDialog.tscn" type="PackedScene" id=27]
 
 [sub_resource type="Shader" id=1]
 code = "shader_type canvas_item;
@@ -155,11 +169,80 @@ shader_param/corner_radius = 0.05
 shader_param/time = null
 shader_param/reflection_tex = ExtResource( 7 )
 
-[sub_resource type="DynamicFont" id=3]
-size = 31
-use_mipmaps = true
-use_filter = true
-font_data = ExtResource( 4 )
+[sub_resource type="Shader" id=13]
+code = "shader_type canvas_item;
+
+// Which side to glow from:
+//   vec2(-1,0) = left edge
+//   vec2( 1,0) = right edge
+//   vec2(0,-1) = top edge
+//   vec2(0, 1) = bottom edge
+uniform vec2 side_vec = vec2(-1.0, 0.0);
+
+// How far (in UV units) from the edge the fade reaches zero
+uniform float extent  : hint_range(0.0, 1.0) = 0.2;
+
+// How strong the glow at the edge (1.0 = full tint, 0.0 = no effect)
+uniform float strength : hint_range(0.0, 1.0) = 1.0;
+
+// The color/tint of the glow; for darkness use black (0,0,0,1)
+uniform vec4 glow_color : hint_color = vec4(0.0, 0.0, 0.0, 1.0);
+
+void fragment() {
+    vec2 uv = SCREEN_UV;
+
+    // Determine distance from the chosen edge, in 0→1:
+    float d;
+    if (abs(side_vec.x) > abs(side_vec.y)) {
+        // Left or right edge
+        if (side_vec.x > 0.0) {
+            // Right edge: uv.x runs 0→1 left→right, so invert
+            d = 1.0 - uv.x;
+        } else {
+            // Left edge
+            d = uv.x;
+        }
+    } else {
+        // Top or bottom edge
+        if (side_vec.y > 0.0) {
+            // Bottom edge: uv.y runs 0→1 top→bottom, so invert
+            d = 1.0 - uv.y;
+        } else {
+            // Top edge
+            d = uv.y;
+        }
+    }
+
+    // Build a smooth mask: 1.0 at the edge (d=0), 0.0 at d=extent
+    float mask = 1.0 - smoothstep(0.0, extent, d);
+
+    // Apply overall strength
+    float effect = mask * strength;
+
+    // Sample what’s already on screen
+    vec4 src = texture(SCREEN_TEXTURE, SCREEN_UV);
+
+    // Mix toward your glow_color
+    COLOR = mix(src, glow_color, effect * glow_color.a);
+}
+"
+
+[sub_resource type="ShaderMaterial" id=15]
+shader = SubResource( 13 )
+shader_param/side_vec = Vector2( 1, 0 )
+shader_param/extent = 0.0
+shader_param/strength = 1.0
+shader_param/glow_color = Color( 0, 0, 0, 1 )
+
+[sub_resource type="ShaderMaterial" id=14]
+shader = SubResource( 13 )
+shader_param/side_vec = Vector2( 0, -1 )
+shader_param/extent = 0.0
+shader_param/strength = 1.0
+shader_param/glow_color = Color( 0, 0, 0, 1 )
+
+[sub_resource type="StyleBoxFlat" id=16]
+bg_color = Color( 0.746094, 0.738565, 0.655746, 1 )
 
 [sub_resource type="StyleBoxFlat" id=11]
 bg_color = Color( 0.698039, 0.596078, 0.4, 1 )
@@ -282,64 +365,105 @@ align = 1
 valign = 1
 uppercase = true
 
+[node name="TopLeft" type="Position2D" parent="."]
+position = Vector2( -1850, -1850 )
+
+[node name="TopRight" type="Position2D" parent="."]
+position = Vector2( 1900, -1850 )
+
+[node name="BottomLeft" type="Position2D" parent="."]
+position = Vector2( -1850, 1850 )
+
+[node name="BottomRight" type="Position2D" parent="."]
+position = Vector2( 1900, 1850 )
+
 [node name="CitiesLayer" type="CanvasLayer" parent="."]
 layer = -2
 
 [node name="Libreville" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 121, -129 )
 script = ExtResource( 9 )
+bannerTex = ExtResource( 12 )
 
 [node name="Antoniata" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -355, 432 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker2"
+bannerTex = ExtResource( 13 )
 
 [node name="Connaught" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 449, 1012 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker3"
 FlipX = true
+bannerTex = ExtResource( 19 )
 
 [node name="Leinster" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 1668, 404 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker4"
 FlipX = true
+bannerTex = ExtResource( 18 )
 
 [node name="Farreach" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -899, -279 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker5"
 FlipX = true
+bannerTex = ExtResource( 14 )
 
 [node name="Braisewater" type="Position2D" parent="CitiesLayer"]
 position = Vector2( -1115, 944 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker6"
 FlipX = true
+bannerTex = ExtResource( 20 )
 
 [node name="Towersted" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 1573, -362 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker7"
 FlipX = true
+bannerTex = ExtResource( 16 )
 
 [node name="Antecedent" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 505, -509 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker8"
 FlipX = true
+bannerTex = ExtResource( 17 )
 
 [node name="Dececedent" type="Position2D" parent="CitiesLayer"]
 position = Vector2( 679, -569 )
 script = ExtResource( 9 )
 AtlasKey = "citymarker9"
 FlipX = true
+bannerTex = ExtResource( 15 )
 
 [node name="GlassLayer" type="CanvasLayer" parent="."]
 
 [node name="GlassEffect" type="ColorRect" parent="GlassLayer"]
 material = SubResource( 5 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource( 6 )
+
+[node name="MapEdgeLayer" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="XMapEdgeEffect" type="ColorRect" parent="MapEdgeLayer"]
+material = SubResource( 15 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource( 6 )
+
+[node name="MapEdgeLayer2" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="YMapEdgeEffect" type="ColorRect" parent="MapEdgeLayer2"]
+material = SubResource( 14 )
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
@@ -360,16 +484,103 @@ margin_left = -1.0
 mouse_filter = 2
 
 [node name="Panel" type="Panel" parent="UILayer/Control"]
-margin_right = 298.0
-margin_bottom = 63.0
+margin_right = 365.0
+margin_bottom = 66.0
+custom_styles/panel = SubResource( 16 )
 
-[node name="RichTextLabel" type="RichTextLabel" parent="UILayer/Control/Panel"]
-margin_left = 8.0
+[node name="HBoxContainer" type="HBoxContainer" parent="UILayer/Control/Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+
+[node name="Control" type="Control" parent="UILayer/Control/Panel/HBoxContainer"]
+margin_right = 17.0
+margin_bottom = 66.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="GoldLabel" type="Label" parent="UILayer/Control/Panel/HBoxContainer"]
+margin_left = 21.0
 margin_top = 11.0
-margin_right = 288.0
-margin_bottom = 51.0
-custom_fonts/normal_font = SubResource( 3 )
+margin_right = 191.0
+margin_bottom = 55.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.396078, 0.298039, 0.133333, 1 )
+custom_fonts/font = ExtResource( 23 )
 text = "Money: 12"
+
+[node name="Control3" type="Control" parent="UILayer/Control/Panel/HBoxContainer"]
+margin_left = 195.0
+margin_right = 212.0
+margin_bottom = 66.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UILayer/Control/Panel/HBoxContainer"]
+margin_left = 216.0
+margin_right = 343.0
+margin_bottom = 66.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.75
+alignment = 1
+
+[node name="PositonLabel" type="Label" parent="UILayer/Control/Panel/HBoxContainer/VBoxContainer"]
+margin_top = 11.0
+margin_right = 127.0
+margin_bottom = 31.0
+custom_colors/font_color = Color( 0.396078, 0.298039, 0.133333, 1 )
+custom_fonts/font = ExtResource( 22 )
+text = "Pos: 0,0"
+
+[node name="TimeLabel" type="Label" parent="UILayer/Control/Panel/HBoxContainer/VBoxContainer"]
+margin_top = 35.0
+margin_right = 127.0
+margin_bottom = 55.0
+custom_colors/font_color = Color( 0.396078, 0.298039, 0.133333, 1 )
+custom_fonts/font = ExtResource( 22 )
+text = "Time: 12:00"
+
+[node name="Control2" type="Control" parent="UILayer/Control/Panel/HBoxContainer"]
+margin_left = 347.0
+margin_right = 365.0
+margin_bottom = 66.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="AutosavePanel" type="Panel" parent="UILayer/Control"]
+visible = false
+anchor_top = 1.0
+anchor_bottom = 1.0
+margin_top = -43.0
+margin_right = 269.0
+custom_styles/panel = SubResource( 16 )
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UILayer/Control/AutosavePanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+
+[node name="Control" type="Control" parent="UILayer/Control/AutosavePanel/HBoxContainer"]
+margin_right = 6.0
+margin_bottom = 44.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="AutosaveLabel" type="Label" parent="UILayer/Control/AutosavePanel/HBoxContainer"]
+margin_left = 10.0
+margin_right = 258.0
+margin_bottom = 44.0
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 0.396078, 0.298039, 0.133333, 1 )
+custom_fonts/font = ExtResource( 23 )
+text = "AUTOSAVING..."
+
+[node name="Control2" type="Control" parent="UILayer/Control/AutosavePanel/HBoxContainer"]
+margin_left = 262.0
+margin_right = 269.0
+margin_bottom = 44.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
 
 [node name="pauseButton" type="Button" parent="UILayer"]
 anchor_left = 1.0
@@ -379,7 +590,6 @@ margin_top = 11.0
 margin_right = -13.0
 margin_bottom = 59.0
 text = "||"
-script = ExtResource( 22 )
 
 [node name="pauseMenuBackground" type="Control" parent="UILayer"]
 anchor_right = 1.0
@@ -551,6 +761,7 @@ size_flags_stretch_ratio = 0.5
 text = "Resume"
 
 [node name="inventoryScreen" type="Control" parent="UILayer"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 
@@ -594,6 +805,14 @@ margin_left = 5.0
 margin_top = 5.0
 color = Color( 0.819608, 0.807843, 0.764706, 1 )
 
+[node name="ColorRect3" type="TextureRect" parent="UILayer/Minimap"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 5.0
+margin_top = 5.0
+texture = ExtResource( 24 )
+expand = true
+
 [node name="CitiesContainer" type="Control" parent="UILayer/Minimap"]
 margin_right = 40.0
 margin_bottom = 40.0
@@ -609,5 +828,25 @@ margin_right = 2.5
 margin_bottom = 2.5
 color = Color( 0.156863, 0.717647, 0.909804, 1 )
 
-[connection signal="pressed" from="UILayer/pauseButton" to="UILayer/pauseButton" method="_on_Button_pressed"]
+[node name="SaveLoadDialog" parent="UILayer" instance=ExtResource( 27 )]
+margin_left = 55.0
+margin_top = 55.0
+margin_right = -37.0
+margin_bottom = -77.0
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 25 )
+autoplay = true
+
+[node name="ConfirmationSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 26 )
+
+[connection signal="pressed" from="UILayer/pauseButton" to="." method="_on_pauseButton_pressed"]
+[connection signal="value_changed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer/gameVolumeSlider" to="." method="_on_gameVolumeSlider_value_changed"]
+[connection signal="value_changed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/soundEffectsVolumeHBoxContainer/soundEffectsVolumeSlider" to="." method="_on_soundEffectsVolumeSlider_value_changed"]
+[connection signal="value_changed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/ambientVolumeHBoxContainer/ambientVolumeSlider" to="." method="_on_ambientVolumeSlider_value_changed"]
+[connection signal="value_changed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/musicVolumeHBoxContainer/musicVolumeSlider" to="." method="_on_musicVolumeSlider_value_changed"]
+[connection signal="pressed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer2/quitButton" to="." method="_on_quitButton_pressed"]
+[connection signal="pressed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer2/saveLoadButton" to="." method="_on_saveLoadButton_pressed"]
+[connection signal="pressed" from="UILayer/pauseMenuBackground/pauseMenu/pauseMenuVBoxContainer/gameVolumeHBoxContainer2/resumeButton" to="." method="_on_resumeButton_pressed"]
 [connection signal="mouse_exited" from="UILayer/Minimap/ColorRect2" to="." method="_on_ColorRect2_mouse_exited"]

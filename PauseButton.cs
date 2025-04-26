@@ -7,15 +7,6 @@ public class PauseButton : Button
 	{
 		
 	}
-	
-	
-	private void _on_Button_pressed()
-	{
-		GD.Print("Clicked too");
-		
-		GetViewport().SetInputAsHandled();
-	}
-
 }
 
 

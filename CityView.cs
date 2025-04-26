@@ -22,7 +22,8 @@ public class CityView : Control
 	private RandomNumberGenerator _rng;
 	private Button          _buyButton;
 	private Button          _sellButton;
-	private VBoxContainer _tradePanel;
+	private VBoxContainer   _tradePanel;
+	private Label           _goldLabel;
 
 	// markup & markdown factors
 	private const double BuyMarkup  = 1.10;
@@ -31,6 +32,7 @@ public class CityView : Control
 	
 	private List<Label> _buyPriceLabels = new List<Label>();
 	private List<Label> _sellPriceLabels = new List<Label>();
+	private List<Label> _goodsOwnedLabels = new List<Label>();
 	
 	private List<SpinBox> _amountFields = new List<SpinBox>();
 	
@@ -63,7 +65,21 @@ public class CityView : Control
 		_tradePanel = FindNode("TradePanel", true, false) as VBoxContainer;
 		CreateTradeUI();
 
+		_goldLabel = FindNode("GoldLabel", true, false) as Label;
+		GameState.OnGoldChanged += UpdateGold;
+		UpdateGold(GameState.playerGold); // set the initial value
 		
+	}
+	
+	private void UpdateGold(int newGold)
+	{
+		_goldLabel.Text = "Gold: " + newGold;
+	}
+	
+
+	public override void _ExitTree()
+	{
+		GameState.OnGoldChanged -= UpdateGold;
 	}
 	
 	public override void _Process(float delta)
@@ -71,6 +87,9 @@ public class CityView : Control
 		if (Engine.GetFramesDrawn() % 600 == 0)
 		{
 			_economy.StepSimulation();
+			for (int i = 0; i < GameState.CityEconomies[GameState.CurrentCity]._numGoods; i++){
+				UpdatePriceLabels(i);
+			}
 			
 			float[] prices = _economy.GetPrices();
 			_graph.AddValues(prices);
@@ -107,7 +126,7 @@ public class CityView : Control
 		{
 			var hbox = new HBoxContainer();
 			// Label
-			var label = new Label { Text = $"Good {i+1}:" };
+			var label = new Label { Text = $"{GameState.goodsNames[i]}:" };
 			if (LabelFont != null) label.AddFontOverride("font", LabelFont);
 			label.AddColorOverride("font_color", LabelColor);
 			label.SizeFlagsHorizontal = (int)Control.SizeFlags.ExpandFill;
@@ -228,7 +247,7 @@ public class CityView : Control
 			if (LabelFont != null) ownedGoodsLabel.AddFontOverride("font", LabelFont);
 			ownedGoodsLabel.AddColorOverride("font_color", LabelColor);
 			hbox.AddChild(ownedGoodsLabel);
-			_buyPriceLabels.Add(ownedGoodsLabel);
+			_goodsOwnedLabels.Add(ownedGoodsLabel);
 			
 			_tradePanel.AddChild(hbox);
 		}
@@ -239,6 +258,8 @@ public class CityView : Control
 	{
 		_buyPriceLabels[index].Text = _economy.GetBuyPrice(index).ToString("F2")+ "("+(_economy.GetBuyPrice(index)*_amountFields[index].Value).ToString("F2")+")";
 		_sellPriceLabels[index].Text = _economy.GetSellPrice(index).ToString("F2")+ "("+(_economy.GetSellPrice(index)*_amountFields[index].Value).ToString("F2")+")";
+		
+		_goodsOwnedLabels[index].Text = GameState.goodsOwned[index].ToString("F2");
 	}
 	// Signal handlers
 	private void OnMaxPressed(SpinBox amountField, int goodIndex)
@@ -257,15 +278,28 @@ public class CityView : Control
 
 	private void OnBuyPressed(int goodIndex, SpinBox amountField)
 	{
-		_economy.ExternalBuy(goodIndex, 1f, (int)amountField.Value);
-		
-		UpdatePriceLabels(goodIndex);
+		int purchasePrice = (int)Math.Ceiling(_economy.GetBuyPrice(goodIndex)*amountField.Value);
+		if (GameState.playerGold>=purchasePrice){
+			_economy.ExternalBuy(goodIndex, 1f, (int)amountField.Value);
+			GameState.goodsOwned[goodIndex] += (int)amountField.Value;
+			
+			GameState.playerGold -= purchasePrice;
+			UpdatePriceLabels(goodIndex);
+		}
 	}
 
 	private void OnSellPressed(int goodIndex, SpinBox amountField)
 	{
-		_economy.ExternalSell(goodIndex, 1f, (int)amountField.Value);
-		UpdatePriceLabels(goodIndex);
+		int sellPrice = (int)Math.Ceiling(_economy.GetSellPrice(goodIndex)*amountField.Value);
+		
+		if (GameState.goodsOwned[goodIndex]>=(int)amountField.Value){
+			_economy.ExternalSell(goodIndex, 1f, (int)amountField.Value);
+			GameState.goodsOwned[goodIndex] -= (int)amountField.Value;
+			
+			GameState.playerGold += sellPrice;
+			UpdatePriceLabels(goodIndex);
+			
+		}
 	}
 	public void _on_Button_pressed()
 	{

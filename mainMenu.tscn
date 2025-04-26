@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://mainMenu.cs" type="Script" id=1]
 [ext_resource path="res://barlowFontSize16.tres" type="DynamicFont" id=2]
 [ext_resource path="res://assets/dwarf.png" type="Texture" id=3]
+[ext_resource path="res://SaveLoadDialog.tscn" type="PackedScene" id=4]
 
 [sub_resource type="StyleBoxFlat" id=1]
 bg_color = Color( 0.854902, 0.752941, 0.603922, 1 )
@@ -26,88 +27,89 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="Panel/Main Menu separation"]
-margin_right = 510.0
-margin_bottom = 600.0
+margin_right = 598.0
+margin_bottom = 800.0
 rect_min_size = Vector2( 100, 0 )
 size_flags_horizontal = 3
 custom_styles/panel = SubResource( 2 )
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Panel/Main Menu separation"]
-margin_left = 514.0
-margin_right = 1024.0
-margin_bottom = 600.0
+margin_left = 602.0
+margin_right = 1200.0
+margin_bottom = 800.0
 rect_min_size = Vector2( 100, 0 )
 size_flags_horizontal = 3
 alignment = 1
 
 [node name="Insert Logo here" type="Control" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_right = 510.0
-margin_bottom = 317.0
+margin_right = 598.0
+margin_bottom = 450.0
 size_flags_vertical = 3
 
 [node name="Continue" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_top = 321.0
-margin_right = 510.0
-margin_bottom = 341.0
+margin_top = 454.0
+margin_right = 598.0
+margin_bottom = 474.0
 text = "Continue"
 
-[node name="New game" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_top = 345.0
-margin_right = 510.0
-margin_bottom = 365.0
+[node name="NewGame" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
+margin_top = 478.0
+margin_right = 598.0
+margin_bottom = 498.0
 text = "New game"
 
-[node name="Load game" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_top = 369.0
-margin_right = 510.0
-margin_bottom = 389.0
+[node name="LoadGame" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
+margin_top = 502.0
+margin_right = 598.0
+margin_bottom = 522.0
 text = "Load game"
 
 [node name="Settings" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_top = 393.0
-margin_right = 510.0
-margin_bottom = 413.0
+margin_top = 526.0
+margin_right = 598.0
+margin_bottom = 546.0
 text = "Settings"
 
 [node name="Credits" type="Button" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_top = 417.0
-margin_right = 510.0
-margin_bottom = 437.0
+margin_top = 550.0
+margin_right = 598.0
+margin_bottom = 570.0
 text = "Credits"
 
 [node name="Filler" type="Control" parent="Panel/Main Menu separation/VBoxContainer"]
-margin_top = 441.0
-margin_right = 510.0
-margin_bottom = 600.0
+margin_top = 574.0
+margin_right = 598.0
+margin_bottom = 800.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
 
 [node name="TutorialPopup" type="HBoxContainer" parent="."]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 alignment = 1
 
 [node name="Filler1" type="Control" parent="TutorialPopup"]
-margin_right = 254.0
-margin_bottom = 600.0
+margin_right = 298.0
+margin_bottom = 800.0
 size_flags_horizontal = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="TutorialPopup"]
-margin_left = 258.0
-margin_right = 766.0
-margin_bottom = 600.0
+margin_left = 302.0
+margin_right = 898.0
+margin_bottom = 800.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
 [node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer"]
-margin_right = 508.0
-margin_bottom = 197.0
+margin_right = 596.0
+margin_bottom = 398.0
 size_flags_vertical = 3
 
 [node name="Tutorial" type="WindowDialog" parent="TutorialPopup/VBoxContainer"]
-visible = true
 margin_top = 201.0
-margin_right = 508.0
+margin_right = 596.0
 margin_bottom = 398.0
 rect_min_size = Vector2( 100, 100 )
 size_flags_horizontal = 3
@@ -119,98 +121,144 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
-margin_right = 31.0
+margin_right = 36.0
 margin_bottom = 197.0
 size_flags_horizontal = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
-margin_left = 35.0
-margin_right = 472.0
+margin_left = 40.0
+margin_right = 555.0
 margin_bottom = 197.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 14.0
 
 [node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_right = 437.0
-margin_bottom = 27.0
+margin_right = 515.0
+margin_bottom = 32.0
 size_flags_vertical = 3
 
 [node name="Tutorial text" type="Label" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 31.0
-margin_right = 437.0
-margin_bottom = 74.0
+margin_top = 36.0
+margin_right = 515.0
+margin_bottom = 56.0
 custom_fonts/font = ExtResource( 2 )
 text = "Are you sure you want to start a new game without a tutorial?"
 autowrap = true
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 78.0
-margin_right = 437.0
-margin_bottom = 106.0
+margin_top = 60.0
+margin_right = 515.0
+margin_bottom = 92.0
 size_flags_vertical = 3
 
 [node name="HBoxContainer" type="HBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 110.0
-margin_right = 437.0
-margin_bottom = 165.0
+margin_top = 96.0
+margin_right = 515.0
+margin_bottom = 160.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
 [node name="No include tutorial" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_right = 135.0
-margin_bottom = 55.0
+margin_bottom = 64.0
 size_flags_horizontal = 3
 text = "No, include tutorial"
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
 margin_left = 139.0
-margin_right = 144.0
-margin_bottom = 55.0
+margin_right = 183.0
+margin_bottom = 64.0
 size_flags_horizontal = 3
 
 [node name="Yes tutorial" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 148.0
-margin_right = 256.0
-margin_bottom = 55.0
+margin_left = 187.0
+margin_right = 295.0
+margin_bottom = 64.0
 size_flags_horizontal = 3
 text = "Yes, no tutorial"
 
 [node name="Filler3" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 260.0
-margin_right = 265.0
-margin_bottom = 55.0
+margin_left = 299.0
+margin_right = 343.0
+margin_bottom = 64.0
 size_flags_horizontal = 3
 
 [node name="Yes dont ask again" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 269.0
-margin_right = 437.0
-margin_bottom = 55.0
+margin_left = 347.0
+margin_right = 515.0
+margin_bottom = 64.0
 size_flags_horizontal = 3
 text = "Yes, don't ask again!!! >:("
 
 [node name="Filler4" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 169.0
-margin_right = 437.0
+margin_top = 164.0
+margin_right = 515.0
 margin_bottom = 197.0
 size_flags_vertical = 3
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
-margin_left = 476.0
-margin_right = 508.0
+margin_left = 559.0
+margin_right = 596.0
 margin_bottom = 197.0
 size_flags_horizontal = 3
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer"]
 margin_top = 402.0
-margin_right = 508.0
-margin_bottom = 600.0
+margin_right = 596.0
+margin_bottom = 800.0
 size_flags_vertical = 3
 
 [node name="Filler2" type="Control" parent="TutorialPopup"]
-margin_left = 770.0
-margin_right = 1024.0
-margin_bottom = 600.0
+margin_left = 902.0
+margin_right = 1200.0
+margin_bottom = 800.0
 size_flags_horizontal = 3
 
-[connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/New game" to="." method="_on_New_game_pressed"]
+[node name="NameNewSave" type="AcceptDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -119.0
+margin_top = -26.0
+margin_right = 119.0
+margin_bottom = 73.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+window_title = "Name Save"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NameNewSave"]
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+margin_left = 8.0
+margin_top = -41.5
+margin_right = -8.0
+margin_bottom = 13.5
+alignment = 1
+
+[node name="Label" type="Label" parent="NameNewSave/VBoxContainer"]
+margin_top = 3.0
+margin_right = 222.0
+margin_bottom = 23.0
+custom_fonts/font = ExtResource( 2 )
+text = "Please name your save file: "
+align = 1
+
+[node name="LineEdit" type="LineEdit" parent="NameNewSave/VBoxContainer"]
+margin_top = 27.0
+margin_right = 222.0
+margin_bottom = 51.0
+size_flags_horizontal = 3
+
+[node name="SaveLoadDialog" parent="." instance=ExtResource( 4 )]
+margin_left = 494.0
+margin_top = 60.0
+margin_right = -50.0
+margin_bottom = -52.0
+IsMainMenu = true
+
+[connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/Continue" to="." method="_on_Continue_pressed"]
+[connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/NewGame" to="." method="_on_New_game_pressed"]
+[connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/LoadGame" to="." method="_on_Load_game_pressed"]
 [connection signal="popup_hide" from="TutorialPopup/VBoxContainer/Tutorial" to="." method="_on_Tutorial_popup_hide"]
