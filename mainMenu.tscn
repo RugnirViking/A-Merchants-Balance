@@ -104,13 +104,14 @@ size_flags_stretch_ratio = 2.0
 
 [node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer"]
 margin_right = 596.0
-margin_bottom = 398.0
+margin_bottom = 264.0
 size_flags_vertical = 3
 
 [node name="Tutorial" type="WindowDialog" parent="TutorialPopup/VBoxContainer"]
-margin_top = 201.0
+visible = true
+margin_top = 268.0
 margin_right = 596.0
-margin_bottom = 398.0
+margin_bottom = 532.0
 rect_min_size = Vector2( 100, 100 )
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -121,89 +122,94 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
-margin_right = 36.0
-margin_bottom = 197.0
+margin_right = 12.0
+margin_bottom = 264.0
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
-margin_left = 40.0
-margin_right = 555.0
-margin_bottom = 197.0
+margin_left = 16.0
+margin_right = 579.0
+margin_bottom = 264.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 14.0
 
 [node name="Filler1" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_right = 515.0
-margin_bottom = 32.0
+margin_right = 563.0
+margin_bottom = 45.0
 size_flags_vertical = 3
 
 [node name="Tutorial text" type="Label" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 36.0
-margin_right = 515.0
-margin_bottom = 56.0
+margin_top = 49.0
+margin_right = 563.0
+margin_bottom = 69.0
 custom_fonts/font = ExtResource( 2 )
 text = "Are you sure you want to start a new game without a tutorial?"
+align = 1
 autowrap = true
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 60.0
-margin_right = 515.0
-margin_bottom = 92.0
+margin_top = 73.0
+margin_right = 563.0
+margin_bottom = 119.0
 size_flags_vertical = 3
 
 [node name="HBoxContainer" type="HBoxContainer" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 96.0
-margin_right = 515.0
-margin_bottom = 160.0
+margin_top = 123.0
+margin_right = 563.0
+margin_bottom = 214.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
 [node name="No include tutorial" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_right = 135.0
-margin_bottom = 64.0
+margin_right = 170.0
+margin_bottom = 91.0
 size_flags_horizontal = 3
 text = "No, include tutorial"
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 139.0
-margin_right = 183.0
-margin_bottom = 64.0
+margin_left = 174.0
+margin_right = 192.0
+margin_bottom = 91.0
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
 
 [node name="Yes tutorial" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 187.0
-margin_right = 295.0
-margin_bottom = 64.0
+margin_left = 196.0
+margin_right = 366.0
+margin_bottom = 91.0
 size_flags_horizontal = 3
 text = "Yes, no tutorial"
 
 [node name="Filler3" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 299.0
-margin_right = 343.0
-margin_bottom = 64.0
+margin_left = 370.0
+margin_right = 388.0
+margin_bottom = 91.0
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
 
 [node name="Yes dont ask again" type="Button" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer"]
-margin_left = 347.0
-margin_right = 515.0
-margin_bottom = 64.0
+margin_left = 392.0
+margin_right = 563.0
+margin_bottom = 91.0
 size_flags_horizontal = 3
 text = "Yes, don't ask again!!! >:("
 
 [node name="Filler4" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer"]
-margin_top = 164.0
-margin_right = 515.0
-margin_bottom = 197.0
+margin_top = 218.0
+margin_right = 563.0
+margin_bottom = 264.0
 size_flags_vertical = 3
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer"]
-margin_left = 559.0
+margin_left = 583.0
 margin_right = 596.0
-margin_bottom = 197.0
+margin_bottom = 264.0
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.3
 
 [node name="Filler2" type="Control" parent="TutorialPopup/VBoxContainer"]
-margin_top = 402.0
+margin_top = 536.0
 margin_right = 596.0
 margin_bottom = 800.0
 size_flags_vertical = 3
@@ -261,4 +267,6 @@ IsMainMenu = true
 [connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/Continue" to="." method="_on_Continue_pressed"]
 [connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/NewGame" to="." method="_on_New_game_pressed"]
 [connection signal="pressed" from="Panel/Main Menu separation/VBoxContainer/LoadGame" to="." method="_on_Load_game_pressed"]
-[connection signal="popup_hide" from="TutorialPopup/VBoxContainer/Tutorial" to="." method="_on_Tutorial_popup_hide"]
+[connection signal="pressed" from="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer/No include tutorial" to="." method="_on_No_include_tutorial_pressed"]
+[connection signal="pressed" from="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer/Yes tutorial" to="." method="_on_Yes_tutorial_pressed"]
+[connection signal="pressed" from="TutorialPopup/VBoxContainer/Tutorial/HBoxContainer/VBoxContainer/HBoxContainer/Yes dont ask again" to="." method="_on_Yes_dont_ask_again_pressed"]

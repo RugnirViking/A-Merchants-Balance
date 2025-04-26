@@ -84,7 +84,7 @@ public static class SaveManager
 			var parsed = JSON.Parse(json);
 			if (parsed.Error == Error.Ok)
 				foreach (var item in (parsed.Result as Godot.Collections.Array)){
-					if (item!="lastSaved")
+					if ((string)item!="lastSaved")
 						keys.Add(item as string);
 				}
 		}
@@ -151,6 +151,7 @@ public static class GameState
 	}
 
 	public static int[] goodsOwned = new int[8];
+	public static float[] goodsAveragePrice = new float[goodsOwned.Length];
 	
 	public static List<string> goodsNames = new List<String>{
 		"Wood",
@@ -192,6 +193,7 @@ public static class GameState
 			["worldPosY"]     = worldPos.y,
 			["playerGold"]    = playerGold,
 			["goodsOwned"]    = new Godot.Collections.Array(goodsOwned),
+			["goodsAveragePrice"] = new Godot.Collections.Array(goodsAveragePrice),
 			["masterVolume"]  = masterVolume,
 			["sfxVolume"]     = sfxVolume,
 			["ambientVolume"] = ambientVolume,
@@ -286,7 +288,15 @@ public static class GameState
 			for (int i = 0; i < goodsOwned.Length && i < arr.Count; i++)
 				goodsOwned[i] = Convert.ToInt32(arr[i]);
 		}
-
+		
+		// --- goodsOwned array ---
+		if (data.Contains("goodsAveragePrice")) 
+		{ 
+			var arr = data["goodsAveragePrice"] as Godot.Collections.Array; 
+			for (int i = 0; i < goodsAveragePrice.Length && i < arr.Count; i++) 
+				goodsAveragePrice[i] = Convert.ToSingle(arr[i]); 
+		} 
+		
 		// --- volume settings ---
 		masterVolume  = data.Contains("masterVolume")  ? Convert.ToSingle(data["masterVolume"])  : 1f;
 		sfxVolume     = data.Contains("sfxVolume")     ? Convert.ToSingle(data["sfxVolume"])     : 1f;
@@ -314,6 +324,7 @@ public class BaseGameHandler : Node2D
 	// Speed the world scrolls under the player (px/sec)
 	[Export]
 	public float MoveSpeed = 200f;
+	[Export] private PackedScene TradeGoodEntryScene;
 
 		  
 	private TextureRect       _background;
@@ -328,8 +339,10 @@ public class BaseGameHandler : Node2D
 	private Node2D            _labelContainer;
 	private Minimap           _minimap;
 	private Label             _goldLabel;
+	private Label             _goldLabelInv;
 	private Label             _positionLabel;
 	private AudioStreamPlayer _bgmPlayer;
+	private AudioStreamPlayer _comfirmationSound;
 	private Panel             _autosavePanel;
 	private SaveLoadDialog    _saveLoadDialog;
 	private Control    		  _inventoryScreen;
@@ -628,8 +641,10 @@ public class BaseGameHandler : Node2D
 		_glassMaterial  = (ShaderMaterial)_glassEffect.Material;
 		_labelContainer = GetNodeOrNull<Node2D>("CityLabels");
 		_goldLabel      = FindNode("GoldLabel", true, false) as Label;
+		_goldLabelInv   = FindNode("GoldLabelInv", true, false) as Label;
 		_positionLabel  = FindNode("PositonLabel", true, false) as Label;
 		_bgmPlayer      = FindNode("BGMPlayer", true, false) as AudioStreamPlayer;
+		_comfirmationSound = FindNode("ConfirmationSound", true, false) as AudioStreamPlayer;
 		_autosavePanel  = FindNode("AutosavePanel", true, false) as Panel;
 		_saveLoadDialog = FindNode("SaveLoadDialog", true, false) as SaveLoadDialog;
 		_inventoryScreen= FindNode("InventoryScreen", true, false) as Control;
@@ -674,6 +689,7 @@ public class BaseGameHandler : Node2D
 		UpdateShaderScroll();
 		
 		InitMinimap();
+		InitInventory();
 		
 		(FindNode("gameVolumeSlider",true,false) as HSlider        ).Value = 100 * GameState.masterVolume;
 		(FindNode("soundEffectsVolumeSlider",true,false) as HSlider).Value = 100 * GameState.sfxVolume;
@@ -686,6 +702,7 @@ public class BaseGameHandler : Node2D
 	private void UpdateGold(int newGold)
 	{
 		_goldLabel.Text = "Gold: " + newGold;
+		_goldLabelInv.Text = "Current Gold: " + newGold;
 	}
 	
 
@@ -715,6 +732,37 @@ public class BaseGameHandler : Node2D
 			container.AddChild(dot);
 		}
 	}
+	
+	private void InitInventory()
+	{
+		VBoxContainer _tradeGoodsContainer = FindNode("InvItemList",true,false) as VBoxContainer;
+		// 1) clear out any existing instantiated entries
+		foreach (Node child in _tradeGoodsContainer.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		// 2) for each good in GameState, duplicate the template, fill it, and add it
+		for (int i = 0; i < GameState.goodsNames.Count; i++)
+		{
+			var entry = TradeGoodEntryScene.Instance();
+			entry.Name = $"TradeEntry_{i}";
+
+			// Set each label
+			entry.GetNode<Label>("NameLabel").Text = GameState.goodsNames[i];
+			entry.GetNode<Label>("AmountLabel").Text = GameState.goodsOwned[i].ToString();
+			
+			// total weight = single weight * amount owned
+			int totalWeight = GameState.goodsWeights[i] * GameState.goodsOwned[i];
+			entry.GetNode<Label>("TotalWeightLabel").Text = totalWeight.ToString();
+			
+			// leave avg purchase price at 0 for now
+			entry.GetNode<Label>("AvgPurchasePriceLabel").Text =  GameState.goodsAveragePrice[i].ToString("F2");
+
+			_tradeGoodsContainer.AddChild(entry);
+		}
+	}
+	
 	private void UpdateMinimap()
 	{
 		var minimap = GetNode<Control>("UILayer/Minimap");
@@ -1088,12 +1136,18 @@ public class BaseGameHandler : Node2D
 	private void UpdateSoundVolumes()
 	{
 		double musicVolume = 40*GameState.masterVolume*GameState.musicVolume-40;
+		double sfxVolume = 40*GameState.masterVolume*GameState.sfxVolume-40;
 		if (musicVolume>-40.0){
 			_bgmPlayer.VolumeDb = (float)musicVolume;
 		} else{
 			_bgmPlayer.VolumeDb = (float)-80.0;
 		}
 		
+		if (sfxVolume>-40.0){
+			_comfirmationSound.VolumeDb = (float)sfxVolume;
+		} else{
+			_comfirmationSound.VolumeDb = (float)-80.0;
+		}
 	}
 	
 	private void OnSaveLoadClosed(){
@@ -1127,22 +1181,18 @@ public class BaseGameHandler : Node2D
 	private void _on_saveLoadButton_pressed()
 	{
 		((WindowDialog)_saveLoadDialog).PopupCentered();
+		_comfirmationSound.Play();
 	}
 
 	private void _on_inventoryButton_pressed()
 	{
 		_inventoryScreen.Show();
+		_comfirmationSound.Play();
+	}
+	private void _on_Button_pressed()
+	{
+		_inventoryScreen.Hide();
+		_comfirmationSound.Play();
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
 

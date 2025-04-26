@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/GamejamBadaboop.mp3-9f687289a954b6e830ab93be0a65f5c4.mp3str"
+
+[deps]
+
+source_file="res://sfx/GamejamBadaboop.mp3"
+dest_files=[ "res://.import/GamejamBadaboop.mp3-9f687289a954b6e830ab93be0a65f5c4.mp3str" ]
+
+[params]
+
+loop=false
+loop_offset=0

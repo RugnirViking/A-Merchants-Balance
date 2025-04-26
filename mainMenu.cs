@@ -64,9 +64,22 @@ public class mainMenu : Control
 		var world = (PackedScene)GD.Load("res://Node2D.tscn");
 		GetTree().ChangeSceneTo(world);
 	}
+	
+	private void _on_No_include_tutorial_pressed()
+	{
+		var world = (PackedScene)GD.Load("res://Node2D.tscn");
+		GetTree().ChangeSceneTo(world);
+	}
+
+
+	private void _on_Yes_tutorial_pressed()
+	{
+		// Replace with function body.
+	}
+
+
+	private void _on_Yes_dont_ask_again_pressed()
+	{
+		// Replace with function body.
+	}
 }
-
-
-
-
-

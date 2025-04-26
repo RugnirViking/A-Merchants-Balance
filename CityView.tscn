@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=2]
+[gd_scene load_steps=19 format=2]
 
 [ext_resource path="res://Barlow-Black.ttf" type="DynamicFontData" id=1]
 [ext_resource path="res://assets/banner1.png" type="Texture" id=2]
@@ -10,6 +10,8 @@
 [ext_resource path="res://assets/castleview.png" type="Texture" id=8]
 [ext_resource path="res://GraphControl.cs" type="Script" id=9]
 [ext_resource path="res://barlowFontSize36.tres" type="DynamicFont" id=10]
+[ext_resource path="res://sfx/GamejamBuy.mp3" type="AudioStream" id=11]
+[ext_resource path="res://sfx/GamejamSell.mp3" type="AudioStream" id=12]
 
 [sub_resource type="StyleBoxFlat" id=4]
 bg_color = Color( 0.870588, 0.780392, 0.607843, 1 )
@@ -512,5 +514,11 @@ margin_left = -47.0
 margin_right = -1.0
 margin_bottom = 95.0
 texture = ExtResource( 2 )
+
+[node name="BuySound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 11 )
+
+[node name="SellSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 12 )
 
 [connection signal="pressed" from="Panel/TopPanel/HBoxContainer/Button" to="." method="_on_Button_pressed"]

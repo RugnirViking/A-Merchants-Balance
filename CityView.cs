@@ -17,13 +17,15 @@ public class CityView : Control
 	private Label               _cityNameLabel;
 	private TextureRect         _bannerTexture;
 	
-	private GraphControl _graph;
-	private MarketSimulator _economy;
+	private GraphControl        _graph;
+	private MarketSimulator     _economy;
 	private RandomNumberGenerator _rng;
-	private Button          _buyButton;
-	private Button          _sellButton;
-	private VBoxContainer   _tradePanel;
-	private Label           _goldLabel;
+	private Button              _buyButton;
+	private Button              _sellButton;
+	private VBoxContainer       _tradePanel;
+	private Label               _goldLabel;
+	private AudioStreamPlayer   _buySound;
+	private AudioStreamPlayer   _sellSound;
 
 	// markup & markdown factors
 	private const double BuyMarkup  = 1.10;
@@ -42,8 +44,22 @@ public class CityView : Control
 		_cityNameLabel           = FindNode("CityName",true,false) as Label;
 		_bannerTexture           = FindNode("TextureRect",true,false) as TextureRect;
 		
-		_buyButton = FindNode("BuyButton", true, false) as Button;
-		_sellButton= FindNode("SellButton", true, false) as Button;
+		_buyButton  = FindNode("BuyButton", true, false)  as Button;
+		_sellButton = FindNode("SellButton", true, false) as Button;
+		
+		_buySound   = FindNode("BuySound", true, false)   as AudioStreamPlayer;
+		_sellSound  = FindNode("SellSound", true, false)  as AudioStreamPlayer;
+		
+		double sfxVolume = 40*GameState.masterVolume*GameState.sfxVolume-40;
+		
+		if (sfxVolume>-40.0){
+			_buySound.VolumeDb = (float)sfxVolume;
+			_sellSound.VolumeDb = (float)sfxVolume;
+		} else{
+			_buySound.VolumeDb = (float)-80.0;
+			_sellSound.VolumeDb = (float)-80.0;
+		}
+		
 
 		_buyButton.Connect("pressed", this, nameof(OnBuyPressed));
 		_sellButton.Connect("pressed", this, nameof(OnSellPressed));
@@ -242,7 +258,7 @@ public class CityView : Control
 			_sellPriceLabels.Add(sellPriceLabel);
 			
 			// Owned display
-			var ownedGoodsLabel = new Label { Text = "0" };
+			var ownedGoodsLabel = new Label { Text = GameState.goodsOwned[i].ToString("F2") };
 			ownedGoodsLabel.SizeFlagsHorizontal = (int)Control.SizeFlags.ExpandFill;
 			if (LabelFont != null) ownedGoodsLabel.AddFontOverride("font", LabelFont);
 			ownedGoodsLabel.AddColorOverride("font_color", LabelColor);
@@ -281,11 +297,26 @@ public class CityView : Control
 		int purchasePrice = (int)Math.Ceiling(_economy.GetBuyPrice(goodIndex)*amountField.Value);
 		if (GameState.playerGold>=purchasePrice){
 			_economy.ExternalBuy(goodIndex, 1f, (int)amountField.Value);
-			GameState.goodsOwned[goodIndex] += (int)amountField.Value;
 			
+			// current state
+			int oldQty     = GameState.goodsOwned[goodIndex];
+			float oldAvg   = GameState.goodsAveragePrice[goodIndex];
+
+			// compute new average cost
+			float totalCostOld = oldAvg * oldQty;
+			float totalCostNew = purchasePrice * (float)amountField.Value;
+			int   newQty       = oldQty + (int)amountField.Value;
+
+			GameState.goodsAveragePrice[goodIndex] = 
+				(newQty > 0)
+				  ? (totalCostOld + totalCostNew) / newQty
+				  : 0f;
+			
+			GameState.goodsOwned[goodIndex] += (int)amountField.Value;
 			GameState.playerGold -= purchasePrice;
 			UpdatePriceLabels(goodIndex);
 		}
+		_buySound.Play();
 	}
 
 	private void OnSellPressed(int goodIndex, SpinBox amountField)
@@ -300,6 +331,7 @@ public class CityView : Control
 			UpdatePriceLabels(goodIndex);
 			
 		}
+		_sellSound.Play();
 	}
 	public void _on_Button_pressed()
 	{
